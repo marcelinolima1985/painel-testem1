@@ -2,7 +2,7 @@
 <html lang="pt-br"> 
 <head>
 <meta charset="UTF-8">
-<title>Painel EBSERH - Competitividade</title>
+<title>HULW/UFPB/EBSERH - Competitividade</title>
 
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
@@ -29,12 +29,13 @@ color:#444;
 
 .inst2{
 font-size:16px;
-color:#666;
+color:#444;
+font-weight:bold;  
 }
 
 .inst3{
 font-size:14px;
-color:#8CC63F;
+color:#444;
 font-weight:bold;
 margin-bottom:5px;
 }
@@ -161,6 +162,15 @@ border-left:6px solid #c00000;
 color:#7a0000;
 }
 
+/* FONTES DOS DADOS */
+
+.fontes{
+margin-top:10px;
+font-size:11px;
+color:#555;
+text-align:right;
+}
+
 /* IMPRESSÃO */
 
 @media print{
@@ -261,6 +271,11 @@ PAINEL DE ANÁLISE DE COMPETITIVIDADE
 <thead></thead>
 <tbody></tbody>
 </table>
+
+<div class="fontes">
+<div>&lt;Fonte: https://dados.gov.br/dados/conjuntos-dados/compras-publicas-do-governo-federal&gt;</div>
+<div>&lt;Fonte: https://www.gov.br/pncp/pt-br&gt;</div>
+</div>
 
 </div>
 
