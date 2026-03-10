@@ -203,37 +203,57 @@ const googleSheetCSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vTQH6JfKGv
 window.onload=function(){
 
 fetch(googleSheetCSV)
-
 .then(res=>res.text())
-
 .then(text=>{
 
 Papa.parse(text,{
-
 header:true,
-
 skipEmptyLines:true,
-
 complete:function(results){
 
 originalData=results.data
+
+// CORRIGE FORMATO DE DATA
+originalData.forEach(r=>{
+r["DataObj"]=parseDateUS(r["Data da Homologação"])
+})
 
 filteredData=[...originalData]
 
 updateDashboard(filteredData)
 
 }
-
 })
 
 })
 
 }
 
+function parseDateUS(data){
+
+if(!data) return null
+
+let p=data.split("/")
+
+let mes=parseInt(p[0])
+let dia=parseInt(p[1])
+let ano=parseInt(p[2])
+
+return new Date(ano,mes-1,dia)
+
+}
+
+function formatDateBR(date){
+
+if(!date) return ""
+
+return date.toLocaleDateString("pt-BR")
+
+}
+
 function updateDashboard(data){
 
 renderTable(data)
-
 updateCards(data)
 
 }
@@ -249,12 +269,11 @@ tbody.innerHTML=""
 if(data.length===0){
 
 document.getElementById("contador").innerText="0 registros encontrados"
-
 return
 
 }
 
-const headers=Object.keys(data[0])
+const headers=Object.keys(data[0]).filter(h=>h!=="DataObj")
 
 let headerRow="<tr>"
 
@@ -272,7 +291,15 @@ let tr="<tr>"
 
 headers.forEach(h=>{
 
-tr+=`<td>${row[h] || ""}</td>`
+let value=row[h]
+
+if(h==="Data da Homologação"){
+
+value=formatDateBR(row["DataObj"])
+
+}
+
+tr+=`<td>${value||""}</td>`
 
 })
 
@@ -288,16 +315,6 @@ document.getElementById("contador").innerText=data.length+" registros encontrado
 
 }
 
-function parseDateBR(data){
-
-if(!data) return null
-
-let p=data.split("/")
-
-return new Date(p[2],p[1]-1,p[0])
-
-}
-
 function updateCards(data){
 
 document.getElementById("totalCompras").innerText=data.length
@@ -305,24 +322,24 @@ document.getElementById("totalCompras").innerText=data.length
 let cnpjs=new Set()
 
 data.forEach(r=>{
-
 let cnpj=(r["CNPJ"]||"").replace(/\D/g,"")
-
 if(cnpj) cnpjs.add(cnpj)
-
 })
 
 document.getElementById("totalCNPJs").innerText=cnpjs.size
 
-let datas=data.map(r=>parseDateBR(r["Data da Homologação"])).filter(d=>d)
+let datas=data.map(r=>r["DataObj"]).filter(d=>d)
 
 if(datas.length>0){
 
 datas.sort((a,b)=>a-b)
 
 document.getElementById("periodo").innerText=
+formatDateBR(datas[0])+" a "+formatDateBR(datas[datas.length-1])
 
-datas[0].toLocaleDateString()+" a "+datas[datas.length-1].toLocaleDateString()
+}else{
+
+document.getElementById("periodo").innerText="-"
 
 }
 
@@ -331,33 +348,24 @@ datas[0].toLocaleDateString()+" a "+datas[datas.length-1].toLocaleDateString()
 function applyFilters(){
 
 const uf=document.getElementById("ufFilter").value.toLowerCase()
-
 const mod=document.getElementById("modalidadeFilter").value.toLowerCase()
-
 const catmat=document.getElementById("catmatFilter").value.toLowerCase()
-
 const dataIni=document.getElementById("dataInicial").value
-
 const dataFim=document.getElementById("dataFinal").value
 
 filteredData=originalData.filter(r=>{
 
-const dataHom=parseDateBR(r["Data da Homologação"])
+let dataHom=r["DataObj"]
 
 let inicio=dataIni?new Date(dataIni):null
-
 let fim=dataFim?new Date(dataFim):null
 
 return(
 
 (!uf||(r["UF"]||"").toLowerCase().includes(uf)) &&
-
 (!mod||(r["Modalidade"]||"").toLowerCase().includes(mod)) &&
-
 (!catmat||(r["Catmat/Catser"]||"").toLowerCase().includes(catmat)) &&
-
 (!inicio||(dataHom && dataHom>=inicio)) &&
-
 (!fim||(dataHom && dataHom<=fim))
 
 )
@@ -382,26 +390,28 @@ function downloadCSV(){
 
 if(filteredData.length===0) return
 
-const headers=Object.keys(filteredData[0])
+const headers=Object.keys(filteredData[0]).filter(h=>h!=="DataObj")
 
 let csv=headers.join(";")+"\n"
 
 filteredData.forEach(r=>{
 
-csv+=headers.map(h=>r[h]||"").join(";")+"\n"
+csv+=headers.map(h=>{
+
+if(h==="Data da Homologação") return formatDateBR(r["DataObj"])
+
+return r[h]||""
+
+}).join(";")+"\n"
 
 })
 
 const blob=new Blob([csv],{type:"text/csv"})
-
 const url=URL.createObjectURL(blob)
 
 const a=document.createElement("a")
-
 a.href=url
-
 a.download="dados_filtrados.csv"
-
 a.click()
 
 }
@@ -410,4 +420,3 @@ a.click()
 
 </body>
 </html>
-
