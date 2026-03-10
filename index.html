@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-br"> 
 <head>
 <meta charset="UTF-8">
-<title>HULW/UFPB/EBSERH - Competitividade</title>
+<title>Painel EBSERH - Competitividade</title>
 
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
@@ -29,13 +29,12 @@ color:#444;
 
 .inst2{
 font-size:16px;
-font-weight:bold;  
-color:#444;
+color:#666;
 }
 
 .inst3{
 font-size:14px;
-color:#444;
+color:#8CC63F;
 font-weight:bold;
 margin-bottom:5px;
 }
@@ -140,6 +139,28 @@ font-weight:bold;
 margin-bottom:10px;
 }
 
+/* OBSERVAÇÃO */
+
+.observacao{
+margin-top:20px;
+padding:15px;
+border-radius:6px;
+font-size:14px;
+font-weight:bold;
+}
+
+.obs-positiva{
+background:#dff5e1;
+border-left:6px solid #2e7d32;
+color:#1b5e20;
+}
+
+.obs-negativa{
+background:#fde0e0;
+border-left:6px solid #c00000;
+color:#7a0000;
+}
+
 /* IMPRESSÃO */
 
 @media print{
@@ -170,7 +191,7 @@ display:none;
 </div>
 
 <div class="header">
-ANÁLISE DE COMPETITIVIDADE
+PAINEL DE ANÁLISE DE COMPETITIVIDADE
 </div>
 
 <div class="container">
@@ -207,11 +228,8 @@ ANÁLISE DE COMPETITIVIDADE
 <div style="margin-bottom:15px;">
 
 <button class="btn-aplicar" onclick="applyFilters()">Aplicar Filtros</button>
-
 <button class="btn-limpar" onclick="clearFilters()">Limpar</button>
-
 <button class="btn-exportar" onclick="downloadCSV()">Baixar CSV</button>
-
 <button class="btn-imprimir" onclick="window.print()">Imprimir</button>
 
 </div>
@@ -234,6 +252,8 @@ ANÁLISE DE COMPETITIVIDADE
 </div>
 
 </div>
+
+<div id="observacao"></div>
 
 <div id="contador"></div>
 
@@ -309,6 +329,28 @@ updateCards(data)
 
 }
 
+function atualizarObservacao(qtdFornecedores){
+
+const periodo=document.getElementById("periodo").innerText
+const catmat=document.getElementById("catmatFilter").value || "CATMAT/CATSER informado"
+const obs=document.getElementById("observacao")
+
+if(qtdFornecedores>=3){
+
+obs.className="observacao obs-positiva"
+
+obs.innerText="OBSERVAÇÃO: ✅ Com base nos dados do Portal Nacional de Dados Abertos e do Portal Nacional de Contratações Públicas referentes ao "+catmat+" utilizado na pesquisa, foram encontrados 3 (três) fornecedores ME/EPP participantes de licitações públicas federais, capazes de atender ao art. 47, II, da LC 123/2006, dentro do intervalo de "+periodo+"."
+
+}else{
+
+obs.className="observacao obs-negativa"
+
+obs.innerText="OBSERVAÇÃO: ❌ Com base nos dados do Portal Nacional de Dados Abertos e do Portal Nacional de Contratações Públicas referentes ao "+catmat+" utilizado na pesquisa, NÃO foram encontrados no mínimo 3 (três) fornecedores ME/EPP participantes de licitações públicas federais, capazes de atender ao art. 47, II, da LC 123/2006, considerando o código de material/serviço utilizado no intervalo mínimo de 1 ano."
+
+}
+
+}
+
 function sortTable(col){
 
 filteredData.sort((a,b)=>{
@@ -364,9 +406,7 @@ headers.forEach(h=>{
 let value=row[h]
 
 if(h==="Data da Homologação"){
-
 value=formatDateBR(row["DataObj"])
-
 }
 
 tr+=`<td>${value||""}</td>`
@@ -412,6 +452,8 @@ formatDateBR(datas[0])+" a "+formatDateBR(datas[datas.length-1])
 document.getElementById("periodo").innerText="-"
 
 }
+
+atualizarObservacao(cnpjs.size)
 
 }
 
@@ -469,7 +511,6 @@ filteredData.forEach(r=>{
 csv+=headers.map(h=>{
 
 if(h==="Data da Homologação") return formatDateBR(r["DataObj"])
-
 return r[h]||""
 
 }).join(";")+"\n"
