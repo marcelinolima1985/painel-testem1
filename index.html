@@ -14,6 +14,31 @@ margin:0;
 background:#f4f6f5;
 }
 
+.institucional{
+text-align:center;
+background:white;
+padding:15px 10px 5px 10px;
+border-bottom:3px solid #8CC63F;
+}
+
+.inst1{
+font-weight:bold;
+font-size:18px;
+color:#444;
+}
+
+.inst2{
+font-size:16px;
+color:#666;
+}
+
+.inst3{
+font-size:14px;
+color:#8CC63F;
+font-weight:bold;
+margin-bottom:5px;
+}
+
 .header{
 background:#8CC63F;
 padding:20px;
@@ -106,6 +131,7 @@ text-align:left;
 th{
 background:#8CC63F;
 color:white;
+cursor:pointer;
 }
 
 #contador{
@@ -135,6 +161,12 @@ display:none;
 </head>
 
 <body>
+
+<div class="institucional">
+<div class="inst1">HOSPITAL UNIVERSITÁRIO LAURO WANDERLEY</div>
+<div class="inst2">UNIVERSIDADE FEDERAL DA PARAÍBA</div>
+<div class="inst3">EMPRESA BRASILEIRA DE SERVIÇOS HOSPITALARES</div>
+</div>
 
 <div class="header">
 PAINEL DE ANÁLISE DE COMPETITIVIDADE
@@ -215,6 +247,7 @@ PAINEL DE ANÁLISE DE COMPETITIVIDADE
 
 let originalData=[]
 let filteredData=[]
+let sortDirection=1
 
 const googleSheetCSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vTQH6JfKGvaPplebHWWPH_6GLvWTc_Fr6Jx5VoAhwqgAnfAPGKnlMhtM8AzJcalvA/pub?gid=1616332808&single=true&output=csv"
 
@@ -275,6 +308,25 @@ updateCards(data)
 
 }
 
+function sortTable(col){
+
+filteredData.sort((a,b)=>{
+
+let v1=a[col]||""
+let v2=b[col]||""
+
+if(v1>v2) return 1*sortDirection
+if(v1<v2) return -1*sortDirection
+return 0
+
+})
+
+sortDirection*=-1
+
+renderTable(filteredData)
+
+}
+
 function renderTable(data){
 
 const thead=document.querySelector("#dataTable thead")
@@ -294,7 +346,7 @@ const headers=Object.keys(data[0]).filter(h=>h!=="DataObj")
 
 let headerRow="<tr>"
 
-headers.forEach(h=>headerRow+=`<th>${h}</th>`)
+headers.forEach(h=>headerRow+=`<th onclick="sortTable('${h}')">${h}</th>`)
 
 headerRow+="</tr>"
 
