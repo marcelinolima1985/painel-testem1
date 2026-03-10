@@ -1,176 +1,139 @@
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
 <title>Painel EBSERH - Competitividade</title>
 
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
 <style>
+
 body{
-    font-family: Arial, sans-serif;
-    margin:0;
-    background:#f4f6f5;
+font-family:Arial;
+margin:0;
+background:#f4f6f5;
 }
 
 .header{
-    background:#8CC63F;
-    padding:20px;
-    text-align:center;
-    color:#4d4d4d;
-    font-size:24px;
-    font-weight:bold;
+background:#8CC63F;
+padding:20px;
+text-align:center;
+font-size:24px;
+font-weight:bold;
+color:#444;
 }
 
-.subheader{
-    background:#e6e6e6;
-    text-align:center;
-    padding:10px;
-    color:#4d4d4d;
+.container{
+padding:20px;
 }
-
-.subheader .linha1{
-    font-size:18px;
-    font-weight:bold;
-}
-
-.subheader .linha2{
-    font-size:16px;
-    font-weight:bold;
-}
-
-.subheader .linha3{
-    font-size:16px;
-    font-weight:bold;
-}
-
-.container{ padding:20px; }
 
 .filtros{
-    background:white;
-    padding:15px;
-    border-radius:8px;
-    box-shadow:0 0 8px rgba(0,0,0,0.08);
-    display:grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap:15px;
-    margin-bottom:20px;
+display:grid;
+grid-template-columns:repeat(5,1fr);
+gap:15px;
+margin-bottom:20px;
+background:white;
+padding:15px;
+border-radius:8px;
+box-shadow:0 0 8px rgba(0,0,0,0.08);
 }
 
-label{ font-size:12px; font-weight:bold; }
+label{
+font-size:12px;
+font-weight:bold;
+}
 
 input{
-    width:100%;
-    padding:6px;
-    border:1px solid #ccc;
-    border-radius:4px;
+width:100%;
+padding:6px;
+border:1px solid #ccc;
+border-radius:4px;
 }
 
 button{
-    padding:8px 12px;
-    border:none;
-    border-radius:4px;
-    cursor:pointer;
-    font-weight:bold;
+padding:8px 12px;
+border:none;
+border-radius:4px;
+cursor:pointer;
+font-weight:bold;
 }
 
-.btn-aplicar{ background:#8CC63F; color:white; }
-.btn-limpar{ background:#C00000; color:white; }
-.btn-exportar{ background:#4d4d4d; color:white; }
-.btn-imprimir{ background:#8CC63F; color:white; }
+.btn-aplicar{background:#8CC63F;color:white;}
+.btn-limpar{background:#C00000;color:white;}
+.btn-exportar{background:#444;color:white;}
+.btn-imprimir{background:#8CC63F;color:white;}
 
 .indicadores{
-    display:flex;
-    gap:15px;
-    margin-bottom:20px;
+display:flex;
+gap:15px;
+margin-bottom:20px;
 }
 
 .card{
-    flex:1;
-    background:white;
-    border-left:6px solid #8CC63F;
-    padding:15px;
-    border-radius:6px;
-    box-shadow:0 0 6px rgba(0,0,0,0.06);
-    text-align:center;
+flex:1;
+background:white;
+border-left:6px solid #8CC63F;
+padding:15px;
+border-radius:6px;
+box-shadow:0 0 6px rgba(0,0,0,0.06);
+text-align:center;
 }
 
 .card h3{
-    margin:0;
-    font-size:14px;
-    color:#666;
+margin:0;
+font-size:14px;
 }
 
 .card p{
-    font-size:22px;
-    font-weight:bold;
-    margin-top:5px;
+font-size:22px;
+font-weight:bold;
+margin-top:5px;
 }
 
 table{
-    width:100%;
-    border-collapse:collapse;
-    background:white;
-    font-size:12px;
+width:100%;
+border-collapse:collapse;
+background:white;
+font-size:12px;
 }
 
-th, td{
-    border:1px solid #ddd;
-    padding:6px;
-    text-align:left;
+th,td{
+border:1px solid #ddd;
+padding:6px;
+text-align:left;
 }
 
 th{
-    background:#8CC63F;
-    color:white;
+background:#8CC63F;
+color:white;
 }
 
-.justificativa{
-    margin-top:15px;
-    padding:10px;
-    background:white;
-    border-radius:6px;
-    font-size:13px;
-    text-align:justify;
-    box-shadow:0 0 6px rgba(0,0,0,0.05);
+#contador{
+font-weight:bold;
+margin-bottom:10px;
 }
 
-.footer{
-    margin-top:20px;
-    padding:10px 20px;
-    font-size:12px;
-    color:#333;
-}
-
-@media print{
-    @page{ size:landscape; }
-    .filtros, button, input{ display:none; }
-}
 </style>
 </head>
 
 <body>
 
-<div class="header">PAINEL DE ANÁLISE DE COMPETITIVIDADE</div>
-
-<div class="subheader">
-    <div class="linha1">HOSPITAL UNIVERSITÁRIO LAURO WANDERLEY</div>
-    <div class="linha2">UNIVERSIDADE FEDERAL DA PARAÍBA</div>
-    <div class="linha3">EMPRESA BRASILEIRA DE SERVIÇOS HOSPITALARES</div>
+<div class="header">
+PAINEL DE ANÁLISE DE COMPETITIVIDADE
 </div>
 
 <div class="container">
 
 <div class="filtros">
+
 <div>
 <label>UF</label>
-<input type="text" id="ufFilter" list="ufList">
-<datalist id="ufList"></datalist>
+<input type="text" id="ufFilter">
 </div>
 
 <div>
 <label>Modalidade</label>
-<input type="text" id="modalidadeFilter" list="modalidadeList">
-<datalist id="modalidadeList"></datalist>
+<input type="text" id="modalidadeFilter">
 </div>
 
 <div>
@@ -187,16 +150,23 @@ th{
 <label>Catmat/Catser</label>
 <input type="text" id="catmatFilter">
 </div>
+
 </div>
 
 <div style="margin-bottom:15px;">
+
 <button class="btn-aplicar" onclick="applyFilters()">Aplicar Filtros</button>
+
 <button class="btn-limpar" onclick="clearFilters()">Limpar</button>
+
 <button class="btn-exportar" onclick="downloadCSV()">Baixar CSV</button>
+
 <button class="btn-imprimir" onclick="window.print()">Imprimir</button>
+
 </div>
 
 <div class="indicadores">
+
 <div class="card">
 <h3>Total de Compras</h3>
 <p id="totalCompras">0</p>
@@ -208,204 +178,236 @@ th{
 </div>
 
 <div class="card">
-<h3>Período Analisado</h3>
+<h3>Período</h3>
 <p id="periodo">-</p>
 </div>
+
 </div>
 
-<div id="contador" style="font-weight:bold;margin-bottom:10px;"></div>
+<div id="contador"></div>
 
 <table id="dataTable">
 <thead></thead>
 <tbody></tbody>
 </table>
 
-<div id="justificativa" class="justificativa"></div>
-
-</div>
-
-<div class="footer">
-<div>&lt;Fonte: https://dados.gov.br/dados/conjuntos-dados/compras-publicas-do-governo-federal&gt;</div>
-<div>&lt;Fonte: https://www.gov.br/pncp/pt-br&gt;</div>
 </div>
 
 <script>
 
-const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQH6JfKGvaPplebHWWPH_6GLvWTc_Fr6Jx5VoAhwqgAnfAPGKnlMhtM8AzJcalvA/pub?gid=1616332808&single=true&output=csv";
+let originalData=[]
+let filteredData=[]
 
-let originalData=[];
-let filteredData=[];
+const googleSheetCSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vTQH6JfKGvaPplebHWWPH_6GLvWTc_Fr6Jx5VoAhwqgAnfAPGKnlMhtM8AzJcalvA/pub?gid=1616332808&single=true&output=csv"
 
-async function loadGoogleSheet(){
-    try{
-        const response = await fetch(GOOGLE_SHEET_CSV_URL);
-        const csvText = await response.text();
+window.onload=function(){
 
-        originalData = parseCSV(csvText);
-        filteredData = [...originalData];
+fetch(googleSheetCSV)
 
-        populateFloatingFilters();
-        updateDashboard(filteredData);
+.then(res=>res.text())
 
-    }catch(error){
-        console.error("Erro ao carregar dados da planilha:", error);
-        alert("Erro ao carregar dados do Google Sheets.");
-    }
+.then(text=>{
+
+Papa.parse(text,{
+
+header:true,
+
+skipEmptyLines:true,
+
+complete:function(results){
+
+originalData=results.data
+
+filteredData=[...originalData]
+
+updateDashboard(filteredData)
+
 }
 
-window.addEventListener("load", loadGoogleSheet);
+})
 
-function parseCSV(text){
-    text=text.replace(/^\uFEFF/, "");
-    const lines=text.split(/\r?\n/);
-    const headers=lines[0].split(";").map(h=>h.trim());
+})
 
-    return lines.slice(1).filter(l=>l.trim()!=="").map(line=>{
-        const values=line.split(";");
-        let obj={};
-        headers.forEach((h,i)=>obj[h]=values[i]?values[i].trim():"");
-        return obj;
-    });
-}
-
-function parseDateBR(dataStr){
-    if(!dataStr) return null;
-    const p=dataStr.split("/");
-    return new Date(p[2], p[1]-1, p[0], 12,0,0);
-}
-
-function populateFloatingFilters(){
-    const ufSet=[...new Set(originalData.map(r=>r["UF"]).filter(Boolean))];
-    const modSet=[...new Set(originalData.map(r=>r["Modalidade"]).filter(Boolean))];
-
-    document.getElementById("ufList").innerHTML=
-        ufSet.map(v=>`<option value="${v}">`).join("");
-
-    document.getElementById("modalidadeList").innerHTML=
-        modSet.map(v=>`<option value="${v}">`).join("");
 }
 
 function updateDashboard(data){
-    renderTable(data);
-    updateCards(data);
+
+renderTable(data)
+
+updateCards(data)
+
 }
 
 function renderTable(data){
-    const thead=document.querySelector("#dataTable thead");
-    const tbody=document.querySelector("#dataTable tbody");
-    thead.innerHTML="";
-    tbody.innerHTML="";
 
-    if(data.length===0){
-        document.getElementById("contador").innerText="0 registros encontrados";
-        return;
-    }
+const thead=document.querySelector("#dataTable thead")
+const tbody=document.querySelector("#dataTable tbody")
 
-    const headers=Object.keys(data[0]);
+thead.innerHTML=""
+tbody.innerHTML=""
 
-    let headerRow="<tr>";
-    headers.forEach(h=>headerRow+=`<th>${h}</th>`);
-    headerRow+="</tr>";
-    thead.innerHTML=headerRow;
+if(data.length===0){
 
-    data.forEach(row=>{
-        let tr="<tr>";
-        headers.forEach(h=>tr+=`<td>${row[h]}</td>`);
-        tr+="</tr>";
-        tbody.innerHTML+=tr;
-    });
+document.getElementById("contador").innerText="0 registros encontrados"
 
-    document.getElementById("contador").innerText=
-        data.length+" registros encontrados";
+return
+
+}
+
+const headers=Object.keys(data[0])
+
+let headerRow="<tr>"
+
+headers.forEach(h=>headerRow+=`<th>${h}</th>`)
+
+headerRow+="</tr>"
+
+thead.innerHTML=headerRow
+
+let html=""
+
+data.forEach(row=>{
+
+let tr="<tr>"
+
+headers.forEach(h=>{
+
+tr+=`<td>${row[h] || ""}</td>`
+
+})
+
+tr+="</tr>"
+
+html+=tr
+
+})
+
+tbody.innerHTML=html
+
+document.getElementById("contador").innerText=data.length+" registros encontrados"
+
+}
+
+function parseDateBR(data){
+
+if(!data) return null
+
+let p=data.split("/")
+
+return new Date(p[2],p[1]-1,p[0])
+
 }
 
 function updateCards(data){
-    document.getElementById("totalCompras").innerText=data.length;
 
-    const cnpjSet = new Set();
-    data.forEach(r=>{
-        let cnpj = r["CNPJ"] || r["CNPJ Fornecedor"] || "";
-        cnpj = cnpj.replace(/\D/g, "");
-        if(cnpj) cnpjSet.add(cnpj);
-    });
+document.getElementById("totalCompras").innerText=data.length
 
-    document.getElementById("totalCNPJs").innerText = cnpjSet.size;
+let cnpjs=new Set()
 
-    const datas=data.map(r=>parseDateBR(r["Data da Homologação"]))
-                    .filter(d=>d);
+data.forEach(r=>{
 
-    if(datas.length>0){
-        datas.sort((a,b)=>a-b);
-        document.getElementById("periodo").innerText=
-            datas[0].toLocaleDateString()+" a "+
-            datas[datas.length-1].toLocaleDateString();
-    }else{
-        document.getElementById("periodo").innerText="-";
-    }
+let cnpj=(r["CNPJ"]||"").replace(/\D/g,"")
 
-    const qtdFornecedores = cnpjSet.size;
-    let textoJustificativa = "";
+if(cnpj) cnpjs.add(cnpj)
 
-    if(qtdFornecedores >= 3){
-        textoJustificativa = "Com base nos dados do Portal Nacional de Dados Abertos e do Portal Nacional de Contratações Públicas referentes ao CATMAT/CATSER utilizado durante a pesquisa de preços, foram encontrados no mínimo 3 (três) fornecedores ME/EPP participantes de licitações públicas federais, capazes de atender ao art. 47, II, da LC 123/2006.";
-    }else{
-        textoJustificativa = "Com base nos dados do Portal Nacional de Dados Abertos e do Portal Nacional de Contratações Públicas referentes ao CATMAT/CATSER utilizado durante a pesquisa de preços, NÃO foram encontrados no mínimo 3 (três) fornecedores ME/EPP participantes.";
-    }
+})
 
-    document.getElementById("justificativa").innerText = textoJustificativa;
+document.getElementById("totalCNPJs").innerText=cnpjs.size
+
+let datas=data.map(r=>parseDateBR(r["Data da Homologação"])).filter(d=>d)
+
+if(datas.length>0){
+
+datas.sort((a,b)=>a-b)
+
+document.getElementById("periodo").innerText=
+
+datas[0].toLocaleDateString()+" a "+datas[datas.length-1].toLocaleDateString()
+
+}
+
 }
 
 function applyFilters(){
-    const uf=document.getElementById("ufFilter").value.toLowerCase();
-    const modalidade=document.getElementById("modalidadeFilter").value.toLowerCase();
-    const catmat=document.getElementById("catmatFilter").value.toLowerCase();
-    const dataIni=document.getElementById("dataInicial").value;
-    const dataFim=document.getElementById("dataFinal").value;
 
-    filteredData=originalData.filter(r=>{
-        const dataHom=parseDateBR(r["Data da Homologação"]);
+const uf=document.getElementById("ufFilter").value.toLowerCase()
 
-        let inicio = dataIni ? new Date(dataIni+"T00:00:00") : null;
-        let fim    = dataFim ? new Date(dataFim+"T23:59:59") : null;
+const mod=document.getElementById("modalidadeFilter").value.toLowerCase()
 
-        return(
-            (!uf|| (r["UF"]||"").toLowerCase().includes(uf)) &&
-            (!modalidade|| (r["Modalidade"]||"").toLowerCase().includes(modalidade)) &&
-            (!catmat|| (r["Catmat/Catser"]||"").toLowerCase().includes(catmat)) &&
-            (!inicio|| (dataHom && dataHom>=inicio)) &&
-            (!fim|| (dataHom && dataHom<=fim))
-        );
-    });
+const catmat=document.getElementById("catmatFilter").value.toLowerCase()
 
-    updateDashboard(filteredData);
+const dataIni=document.getElementById("dataInicial").value
+
+const dataFim=document.getElementById("dataFinal").value
+
+filteredData=originalData.filter(r=>{
+
+const dataHom=parseDateBR(r["Data da Homologação"])
+
+let inicio=dataIni?new Date(dataIni):null
+
+let fim=dataFim?new Date(dataFim):null
+
+return(
+
+(!uf||(r["UF"]||"").toLowerCase().includes(uf)) &&
+
+(!mod||(r["Modalidade"]||"").toLowerCase().includes(mod)) &&
+
+(!catmat||(r["Catmat/Catser"]||"").toLowerCase().includes(catmat)) &&
+
+(!inicio||(dataHom && dataHom>=inicio)) &&
+
+(!fim||(dataHom && dataHom<=fim))
+
+)
+
+})
+
+updateDashboard(filteredData)
+
 }
 
 function clearFilters(){
-    document.querySelectorAll("input").forEach(i=>{
-        if(i.type!=="file") i.value="";
-    });
-    filteredData=[...originalData];
-    updateDashboard(filteredData);
+
+document.querySelectorAll("input").forEach(i=>i.value="")
+
+filteredData=[...originalData]
+
+updateDashboard(filteredData)
+
 }
 
 function downloadCSV(){
-    if(filteredData.length===0) return;
 
-    const headers=Object.keys(filteredData[0]);
-    let csv=headers.join(";")+"\n";
+if(filteredData.length===0) return
 
-    filteredData.forEach(r=>{
-        csv+=headers.map(h=>r[h]||"").join(";")+"\n";
-    });
+const headers=Object.keys(filteredData[0])
 
-    const blob=new Blob([csv],{type:"text/csv"});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement("a");
-    a.href=url;
-    a.download="dados_filtrados.csv";
-    a.click();
+let csv=headers.join(";")+"\n"
+
+filteredData.forEach(r=>{
+
+csv+=headers.map(h=>r[h]||"").join(";")+"\n"
+
+})
+
+const blob=new Blob([csv],{type:"text/csv"})
+
+const url=URL.createObjectURL(blob)
+
+const a=document.createElement("a")
+
+a.href=url
+
+a.download="dados_filtrados.csv"
+
+a.click()
+
 }
+
 </script>
 
 </body>
 </html>
+
