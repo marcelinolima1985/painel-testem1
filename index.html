@@ -113,6 +113,35 @@ font-weight:bold;
 margin-bottom:10px;
 }
 
+.modalidade-box{
+position:relative;
+}
+
+.modalidade-dropdown{
+display:none;
+position:absolute;
+background:white;
+border:1px solid #ccc;
+max-height:200px;
+overflow:auto;
+width:100%;
+z-index:999;
+}
+
+.modalidade-dropdown label{
+display:block;
+padding:5px;
+cursor:pointer;
+}
+
+.modalidade-dropdown label:hover{
+background:#f2f2f2;
+}
+
+@media print{
+@page{ size:landscape; }
+}
+
 </style>
 </head>
 
@@ -131,9 +160,10 @@ PAINEL DE ANÁLISE DE COMPETITIVIDADE
 <input type="text" id="ufFilter">
 </div>
 
-<div>
+<div class="modalidade-box">
 <label>Modalidade</label>
-<input type="text" id="modalidadeFilter">
+<input type="text" id="modalidadeFilter" readonly onclick="toggleModalidade()">
+<div id="modalidadeDropdown" class="modalidade-dropdown"></div>
 </div>
 
 <div>
@@ -156,11 +186,8 @@ PAINEL DE ANÁLISE DE COMPETITIVIDADE
 <div style="margin-bottom:15px;">
 
 <button class="btn-aplicar" onclick="applyFilters()">Aplicar Filtros</button>
-
 <button class="btn-limpar" onclick="clearFilters()">Limpar</button>
-
 <button class="btn-exportar" onclick="downloadCSV()">Baixar CSV</button>
-
 <button class="btn-imprimir" onclick="window.print()">Imprimir</button>
 
 </div>
@@ -197,6 +224,7 @@ PAINEL DE ANÁLISE DE COMPETITIVIDADE
 
 let originalData=[]
 let filteredData=[]
+let modalidadesSelecionadas=[]
 
 const googleSheetCSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vTQH6JfKGvaPplebHWWPH_6GLvWTc_Fr6Jx5VoAhwqgAnfAPGKnlMhtM8AzJcalvA/pub?gid=1616332808&single=true&output=csv"
 
@@ -213,12 +241,13 @@ complete:function(results){
 
 originalData=results.data
 
-// CORRIGE FORMATO DE DATA
 originalData.forEach(r=>{
 r["DataObj"]=parseDateUS(r["Data da Homologação"])
 })
 
 filteredData=[...originalData]
+
+criarFiltroModalidade()
 
 updateDashboard(filteredData)
 
@@ -226,6 +255,49 @@ updateDashboard(filteredData)
 })
 
 })
+
+}
+
+function criarFiltroModalidade(){
+
+let lista=[...new Set(originalData.map(r=>r["Modalidade"]).filter(Boolean))]
+
+let html=""
+
+lista.forEach(m=>{
+
+html+=`<label>
+<input type="checkbox" value="${m}" onchange="selecionarModalidade(this)">
+${m}
+</label>`
+
+})
+
+document.getElementById("modalidadeDropdown").innerHTML=html
+
+}
+
+function toggleModalidade(){
+
+let d=document.getElementById("modalidadeDropdown")
+
+d.style.display=d.style.display==="block"?"none":"block"
+
+}
+
+function selecionarModalidade(el){
+
+if(el.checked){
+
+modalidadesSelecionadas.push(el.value)
+
+}else{
+
+modalidadesSelecionadas=modalidadesSelecionadas.filter(v=>v!==el.value)
+
+}
+
+document.getElementById("modalidadeFilter").value=modalidadesSelecionadas.join(", ")
 
 }
 
@@ -348,7 +420,6 @@ document.getElementById("periodo").innerText="-"
 function applyFilters(){
 
 const uf=document.getElementById("ufFilter").value.toLowerCase()
-const mod=document.getElementById("modalidadeFilter").value.toLowerCase()
 const catmat=document.getElementById("catmatFilter").value.toLowerCase()
 const dataIni=document.getElementById("dataInicial").value
 const dataFim=document.getElementById("dataFinal").value
@@ -360,10 +431,18 @@ let dataHom=r["DataObj"]
 let inicio=dataIni?new Date(dataIni):null
 let fim=dataFim?new Date(dataFim):null
 
+let filtroModalidade=true
+
+if(modalidadesSelecionadas.length>0){
+
+filtroModalidade=modalidadesSelecionadas.includes(r["Modalidade"])
+
+}
+
 return(
 
 (!uf||(r["UF"]||"").toLowerCase().includes(uf)) &&
-(!mod||(r["Modalidade"]||"").toLowerCase().includes(mod)) &&
+filtroModalidade &&
 (!catmat||(r["Catmat/Catser"]||"").toLowerCase().includes(catmat)) &&
 (!inicio||(dataHom && dataHom>=inicio)) &&
 (!fim||(dataHom && dataHom<=fim))
@@ -379,6 +458,10 @@ updateDashboard(filteredData)
 function clearFilters(){
 
 document.querySelectorAll("input").forEach(i=>i.value="")
+
+modalidadesSelecionadas=[]
+
+document.getElementById("modalidadeDropdown").querySelectorAll("input").forEach(c=>c.checked=false)
 
 filteredData=[...originalData]
 
