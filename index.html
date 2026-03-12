@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-br"> 
+<html lang="pt-br">
 <head>
+
 <meta charset="UTF-8">
-<title>HULW/UFPB/EBSERH - Competitividade</title>
+<title>Painel de Competitividade</title>
 
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -18,36 +19,15 @@ background:#f4f6f5;
 .institucional{
 text-align:center;
 background:white;
-padding:15px 10px 5px 10px;
-border-bottom:3px solid #8CC63F;
-}
-
-.inst1{
-font-weight:bold;
-font-size:18px;
-color:#444;
-}
-
-.inst2{
-font-size:16px;
-color:#444;
-font-weight:bold;  
-}
-
-.inst3{
-font-size:14px;
-color:#444;
-font-weight:bold;
-margin-bottom:5px;
+padding:15px;
 }
 
 .header{
 background:#8CC63F;
 padding:20px;
 text-align:center;
-font-size:24px;
+font-size:22px;
 font-weight:bold;
-color:#444;
 }
 
 .container{
@@ -57,21 +37,14 @@ padding:20px;
 .filtros{
 display:grid;
 grid-template-columns:repeat(5,1fr);
-gap:15px;
-margin-bottom:20px;
+gap:10px;
 background:white;
 padding:15px;
-border-radius:8px;
-box-shadow:0 0 8px rgba(0,0,0,0.08);
-}
-
-label{
-font-size:12px;
-font-weight:bold;
+border-radius:6px;
+margin-bottom:20px;
 }
 
 input{
-width:100%;
 padding:6px;
 border:1px solid #ccc;
 border-radius:4px;
@@ -85,36 +58,30 @@ cursor:pointer;
 font-weight:bold;
 }
 
-.btn-aplicar{background:#8CC63F;color:white;}
-.btn-limpar{background:#C00000;color:white;}
-.btn-exportar{background:#444;color:white;}
-.btn-imprimir{background:#4285F4;color:white;}
+.btn-aplicar{background:#8CC63F;color:white}
+.btn-limpar{background:#c00000;color:white}
+.btn-exportar{background:#444;color:white}
+.btn-imprimir{background:#4285F4;color:white}
 
 .indicadores{
 display:flex;
-gap:15px;
+gap:10px;
 margin-bottom:20px;
 }
 
 .card{
 flex:1;
 background:white;
-border-left:6px solid #8CC63F;
 padding:15px;
+border-left:6px solid #8CC63F;
 border-radius:6px;
-box-shadow:0 0 6px rgba(0,0,0,0.06);
 text-align:center;
-}
-
-.card h3{
-margin:0;
-font-size:14px;
 }
 
 .card p{
 font-size:22px;
 font-weight:bold;
-margin-top:5px;
+margin:5px;
 }
 
 table{
@@ -127,45 +94,11 @@ font-size:12px;
 th,td{
 border:1px solid #ddd;
 padding:6px;
-text-align:left;
 }
 
 th{
 background:#8CC63F;
 color:white;
-cursor:pointer;
-}
-
-#contador{
-font-weight:bold;
-margin-bottom:10px;
-}
-
-.observacao{
-margin-top:20px;
-padding:15px;
-border-radius:6px;
-font-size:14px;
-font-weight:bold;
-}
-
-.obs-positiva{
-background:#dff5e1;
-border-left:6px solid #2e7d32;
-color:#1b5e20;
-}
-
-.obs-negativa{
-background:#fde0e0;
-border-left:6px solid #c00000;
-color:#7a0000;
-}
-
-.fontes{
-margin-top:10px;
-font-size:11px;
-color:#555;
-text-align:left;
 }
 
 .graficos{
@@ -179,40 +112,18 @@ margin-top:30px;
 background:white;
 padding:15px;
 border-radius:6px;
-box-shadow:0 0 6px rgba(0,0,0,0.06);
-}
-
-.grafico-card h3{
-margin-top:0;
-font-size:14px;
-text-align:center;
-}
-
-@media print{
-
-@page{
-size:landscape;
-}
-
-.filtros{
-display:none;
-}
-
-button{
-display:none;
-}
-
 }
 
 </style>
+
 </head>
 
 <body>
 
 <div class="institucional">
-<div class="inst1">HOSPITAL UNIVERSITÁRIO LAURO WANDERLEY</div>
-<div class="inst2">UNIVERSIDADE FEDERAL DA PARAÍBA</div>
-<div class="inst3">EMPRESA BRASILEIRA DE SERVIÇOS HOSPITALARES</div>
+<b>HOSPITAL UNIVERSITÁRIO LAURO WANDERLEY</b><br>
+UNIVERSIDADE FEDERAL DA PARAÍBA<br>
+EMPRESA BRASILEIRA DE SERVIÇOS HOSPITALARES
 </div>
 
 <div class="header">
@@ -223,64 +134,39 @@ PAINEL DE ANÁLISE DE COMPETITIVIDADE
 
 <div class="filtros">
 
-<div>
-<label>UF</label>
-<input type="text" id="ufFilter">
-</div>
-
-<div>
-<label>Modalidade</label>
-<input type="text" id="modalidadeFilter">
-</div>
-
-<div>
-<label>Data Inicial</label>
+<input id="ufFilter" placeholder="UF">
+<input id="modalidadeFilter" placeholder="Modalidade">
 <input type="date" id="dataInicial">
-</div>
-
-<div>
-<label>Data Final</label>
 <input type="date" id="dataFinal">
-</div>
-
-<div>
-<label>Catmat/Catser</label>
-<input type="text" id="catmatFilter">
-</div>
+<input id="catmatFilter" placeholder="Catmat/Catser">
 
 </div>
-
-<div style="margin-bottom:15px;">
 
 <button class="btn-aplicar" onclick="applyFilters()">Aplicar Filtros</button>
 <button class="btn-limpar" onclick="clearFilters()">Limpar</button>
 <button class="btn-exportar" onclick="downloadCSV()">Baixar CSV</button>
 <button class="btn-imprimir" onclick="window.print()">Imprimir</button>
 
-</div>
+<br><br>
 
 <div class="indicadores">
 
 <div class="card">
-<h3>Total de Compras</h3>
+Total de Compras
 <p id="totalCompras">0</p>
 </div>
 
 <div class="card">
-<h3>Quantidade de Fornecedores</h3>
+Quantidade de Fornecedores
 <p id="totalCNPJs">0</p>
 </div>
 
 <div class="card">
-<h3>Período</h3>
+Período
 <p id="periodo">-</p>
 </div>
 
 </div>
-
-<div id="observacao"></div>
-
-<div id="contador"></div>
 
 <table id="dataTable">
 <thead></thead>
@@ -301,27 +187,156 @@ PAINEL DE ANÁLISE DE COMPETITIVIDADE
 
 </div>
 
-<div class="fontes">
-<div>&lt;Fonte: https://dados.gov.br/dados/conjuntos-dados/compras-publicas-do-governo-federal&gt;</div>
-<div>&lt;Fonte: https://www.gov.br/pncp/pt-br&gt;</div>
-</div>
-
 </div>
 
 <script>
 
-/* TODO SEU SCRIPT ORIGINAL PERMANECE IGUAL */
-
 let originalData=[]
 let filteredData=[]
-let sortDirection=1
 
 let chartPorte
 let chartLinha
 
-/* restante do código original permanece igual */
+const csvURL="https://docs.google.com/spreadsheets/d/e/2PACX-1vSAMPLE/pub?output=csv"
 
-/* APENAS A CONFIGURAÇÃO DOS GRÁFICOS FOI AJUSTADA */
+/* CARREGAR CSV */
+
+Papa.parse(csvURL,{
+download:true,
+header:true,
+complete:function(results){
+
+originalData=results.data.map(r=>{
+
+r.DataObj=new Date(r["Data"])
+
+return r
+
+})
+
+filteredData=[...originalData]
+
+renderTable(filteredData)
+updateCards(filteredData)
+updateCharts(filteredData)
+
+}
+
+})
+
+/* TABELA */
+
+function renderTable(data){
+
+let table=document.getElementById("dataTable")
+
+let thead=table.querySelector("thead")
+let tbody=table.querySelector("tbody")
+
+thead.innerHTML=""
+tbody.innerHTML=""
+
+if(data.length==0)return
+
+let headers=Object.keys(data[0])
+
+let headRow="<tr>"
+headers.forEach(h=>headRow+="<th>"+h+"</th>")
+headRow+="</tr>"
+
+thead.innerHTML=headRow
+
+data.slice(0,1000).forEach(r=>{
+
+let row="<tr>"
+
+headers.forEach(h=>{
+
+row+="<td>"+(r[h]||"")+"</td>"
+
+})
+
+row+="</tr>"
+
+tbody.innerHTML+=row
+
+})
+
+}
+
+/* CARDS */
+
+function updateCards(data){
+
+document.getElementById("totalCompras").innerText=data.length
+
+let fornecedores=[...new Set(data.map(r=>r.CNPJ))]
+
+document.getElementById("totalCNPJs").innerText=fornecedores.length
+
+if(data.length>0){
+
+let datas=data.map(r=>r.DataObj)
+
+let min=new Date(Math.min(...datas))
+let max=new Date(Math.max(...datas))
+
+document.getElementById("periodo").innerText=
+min.toLocaleDateString()+" - "+max.toLocaleDateString()
+
+}
+
+}
+
+/* FILTROS */
+
+function applyFilters(){
+
+let uf=document.getElementById("ufFilter").value.toUpperCase()
+
+filteredData=originalData.filter(r=>{
+
+return !uf || (r.UF||"").toUpperCase().includes(uf)
+
+})
+
+renderTable(filteredData)
+updateCards(filteredData)
+updateCharts(filteredData)
+
+}
+
+function clearFilters(){
+
+document.querySelectorAll("input").forEach(i=>i.value="")
+
+filteredData=[...originalData]
+
+renderTable(filteredData)
+updateCards(filteredData)
+updateCharts(filteredData)
+
+}
+
+/* CSV DOWNLOAD */
+
+function downloadCSV(){
+
+let csv=Papa.unparse(filteredData)
+
+let blob=new Blob([csv])
+
+let a=document.createElement("a")
+
+a.href=URL.createObjectURL(blob)
+
+a.download="dados.csv"
+
+a.click()
+
+}
+
+/* GRÁFICOS */
 
 function updateCharts(data){
 
@@ -329,23 +344,30 @@ let me=0
 let epp=0
 
 data.forEach(r=>{
-let porte=(r["Porte"]||"").toUpperCase()
-if(porte==="ME") me++
-if(porte==="EPP") epp++
+
+let porte=(r.Porte||"").toUpperCase()
+
+if(porte=="ME")me++
+if(porte=="EPP")epp++
+
 })
 
 let datas={}
 
 data.forEach(r=>{
-let d=formatDateBR(r["DataObj"])
-if(!datas[d]) datas[d]=0
+
+let d=r.DataObj.toLocaleDateString()
+
+if(!datas[d])datas[d]=0
+
 datas[d]++
+
 })
 
 let labels=Object.keys(datas)
-let valores=labels.map(l=>datas[l])
+let valores=Object.values(datas)
 
-if(chartPorte) chartPorte.destroy()
+if(chartPorte)chartPorte.destroy()
 
 chartPorte=new Chart(
 document.getElementById("graficoPorte"),
@@ -365,10 +387,9 @@ x:{grid:{display:false}},
 y:{grid:{display:false}}
 }
 }
-}
-)
+})
 
-if(chartLinha) chartLinha.destroy()
+if(chartLinha)chartLinha.destroy()
 
 chartLinha=new Chart(
 document.getElementById("graficoTendencia"),
@@ -380,8 +401,7 @@ datasets:[{
 data:valores,
 borderColor:"#8CC63F",
 backgroundColor:"#8CC63F",
-tension:0.3,
-fill:false
+tension:0.3
 }]
 },
 options:{
@@ -391,8 +411,7 @@ x:{grid:{display:false}},
 y:{grid:{display:false}}
 }
 }
-}
-)
+})
 
 }
 
