@@ -5,10 +5,9 @@
 <title>HULW/UFPB/EBSERH - Competitividade</title>
 
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-
-/* TODO CSS ORIGINAL MANTIDO 100% */
 
 body{
 font-family:Arial;
@@ -169,6 +168,28 @@ color:#555;
 text-align:left;
 }
 
+/* NOVA ÁREA DOS GRÁFICOS */
+
+.graficos{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20px;
+margin-top:30px;
+}
+
+.grafico-card{
+background:white;
+padding:15px;
+border-radius:6px;
+box-shadow:0 0 6px rgba(0,0,0,0.06);
+}
+
+.grafico-card h3{
+margin-top:0;
+font-size:14px;
+text-align:center;
+}
+
 @media print{
 
 @page{
@@ -260,12 +281,29 @@ PAINEL DE ANÁLISE DE COMPETITIVIDADE
 </div>
 
 <div id="observacao"></div>
-<div id="contador">Carregando dados...</div>
+
+<div id="contador"></div>
 
 <table id="dataTable">
 <thead></thead>
 <tbody></tbody>
 </table>
+
+<!-- NOVOS GRÁFICOS -->
+
+<div class="graficos">
+
+<div class="grafico-card">
+<h3>Fornecedores por Porte (ME/EPP)</h3>
+<canvas id="graficoPorte"></canvas>
+</div>
+
+<div class="grafico-card">
+<h3>Tendência de Registros no Período</h3>
+<canvas id="graficoTendencia"></canvas>
+</div>
+
+</div>
 
 <div class="fontes">
 <div>&lt;Fonte: https://dados.gov.br/dados/conjuntos-dados/compras-publicas-do-governo-federal&gt;</div>
@@ -276,135 +314,160 @@ PAINEL DE ANÁLISE DE COMPETITIVIDADE
 
 <script>
 
-/* MOTOR OTIMIZADO */
-
 let originalData=[]
 let filteredData=[]
-let headers=[]
 let sortDirection=1
+
+let chartPorte
+let chartLinha
 
 const googleSheetCSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vTQH6JfKGvaPplebHWWPH_6GLvWTc_Fr6Jx5VoAhwqgAnfAPGKnlMhtM8AzJcalvA/pub?gid=1616332808&single=true&output=csv"
 
-document.getElementById("contador").innerText="Carregando dados..."
+window.onload=function(){
 
-Papa.parse(googleSheetCSV,{
-download:true,
+fetch(googleSheetCSV)
+.then(res=>res.text())
+.then(text=>{
+
+Papa.parse(text,{
 header:true,
-worker:true,
 skipEmptyLines:true,
 complete:function(results){
 
 originalData=results.data
 
-for(let r of originalData){
-r.DataObj=parseDateUS(r["Data da Homologação"])
-}
+originalData.forEach(r=>{
+r["DataObj"]=parseDateUS(r["Data da Homologação"])
+})
 
-filteredData=originalData
+filteredData=[...originalData]
 
-headers=Object.keys(originalData[0]).filter(h=>h!=="DataObj")
-
-renderTable(filteredData)
-updateCards(filteredData)
+updateDashboard(filteredData)
 
 }
 })
 
+})
+
+}
+
 function parseDateUS(data){
+
 if(!data) return null
+
 let p=data.split("/")
-return new Date(p[2],p[0]-1,p[1])
+
+let mes=parseInt(p[0])
+let dia=parseInt(p[1])
+let ano=parseInt(p[2])
+
+return new Date(ano,mes-1,dia)
+
 }
 
 function formatDateBR(date){
-return date?date.toLocaleDateString("pt-BR"):""
-}
 
-function renderTable(data){
+if(!date) return ""
 
-const thead=document.querySelector("#dataTable thead")
-const tbody=document.querySelector("#dataTable tbody")
-
-thead.innerHTML=""
-tbody.innerHTML=""
-
-if(data.length===0){
-document.getElementById("contador").innerText="0 registros encontrados"
-return
-}
-
-let headerRow=document.createElement("tr")
-
-for(let h of headers){
-let th=document.createElement("th")
-th.textContent=h
-th.onclick=()=>sortTable(h)
-headerRow.appendChild(th)
-}
-
-thead.appendChild(headerRow)
-
-let fragment=document.createDocumentFragment()
-
-for(let row of data){
-
-let tr=document.createElement("tr")
-
-for(let h of headers){
-
-let td=document.createElement("td")
-
-if(h==="Data da Homologação"){
-td.textContent=formatDateBR(row.DataObj)
-}else{
-td.textContent=row[h]||""
-}
-
-tr.appendChild(td)
+return date.toLocaleDateString("pt-BR")
 
 }
 
-fragment.appendChild(tr)
+function updateDashboard(data){
+
+renderTable(data)
+updateCards(data)
+updateCharts(data)
 
 }
 
-tbody.appendChild(fragment)
+function updateCharts(data){
 
-document.getElementById("contador").innerText=data.length+" registros encontrados"
+let me=0
+let epp=0
+
+data.forEach(r=>{
+
+let porte=(r["Porte"]||"").toUpperCase()
+
+if(porte==="ME") me++
+if(porte==="EPP") epp++
+
+})
+
+let datas={}
+
+data.forEach(r=>{
+
+let d=formatDateBR(r["DataObj"])
+
+if(!datas[d]) datas[d]=0
+
+datas[d]++
+
+})
+
+let labels=Object.keys(datas).sort((a,b)=>{
+
+let da=a.split("/").reverse().join("-")
+let db=b.split("/").reverse().join("-")
+
+return new Date(da)-new Date(db)
+
+})
+
+let valores=labels.map(l=>datas[l])
+
+if(chartPorte) chartPorte.destroy()
+
+chartPorte=new Chart(
+document.getElementById("graficoPorte"),
+{
+type:"bar",
+data:{
+labels:["ME","EPP"],
+datasets:[{
+label:"Quantidade",
+data:[me,epp]
+}]
+},
+options:{
+responsive:true,
+plugins:{legend:{display:false}}
+}
+}
+)
+
+if(chartLinha) chartLinha.destroy()
+
+chartLinha=new Chart(
+document.getElementById("graficoTendencia"),
+{
+type:"line",
+data:{
+labels:labels,
+datasets:[{
+label:"Registros",
+data:valores,
+fill:false,
+tension:0.2
+}]
+},
+options:{
+responsive:true
+}
+}
+)
 
 }
 
-function updateCards(data){
-
-document.getElementById("totalCompras").innerText=data.length
-
-let cnpjs=new Set()
-
-for(let r of data){
-let cnpj=(r.CNPJ||"").replace(/\D/g,"")
-if(cnpj) cnpjs.add(cnpj)
-}
-
-document.getElementById("totalCNPJs").innerText=cnpjs.size
-
-let datas=data.map(r=>r.DataObj).filter(Boolean)
-
-if(datas.length){
-datas.sort((a,b)=>a-b)
-document.getElementById("periodo").innerText=formatDateBR(datas[0])+" a "+formatDateBR(datas[datas.length-1])
-}
-
-atualizarObservacao(cnpjs.size)
-
-}
-
-function atualizarObservacao(qtd){
+function atualizarObservacao(qtdFornecedores){
 
 const periodo=document.getElementById("periodo").innerText
 const catmat=document.getElementById("catmatFilter").value || "CATMAT/CATSER informado"
 const obs=document.getElementById("observacao")
 
-if(qtd>=3){
+if(qtdFornecedores>=3){
 
 obs.className="observacao obs-positiva"
 
@@ -420,52 +483,6 @@ obs.innerText="OBSERVAÇÃO: ❌ Com base nos dados do Portal Nacional de Dados 
 
 }
 
-function applyFilters(){
-
-const uf=document.getElementById("ufFilter").value.toLowerCase()
-const mod=document.getElementById("modalidadeFilter").value.toLowerCase()
-const cat=document.getElementById("catmatFilter").value.toLowerCase()
-const dataIni=document.getElementById("dataInicial").value
-const dataFim=document.getElementById("dataFinal").value
-
-if(!uf && !mod && !cat && !dataIni && !dataFim){
-filteredData=originalData
-renderTable(filteredData)
-updateCards(filteredData)
-return
-}
-
-let ini=dataIni?new Date(dataIni):null
-let fim=dataFim?new Date(dataFim):null
-
-filteredData=originalData.filter(r=>{
-
-return(
-(!uf||r.UF?.toLowerCase().includes(uf)) &&
-(!mod||r.Modalidade?.toLowerCase().includes(mod)) &&
-(!cat||r["Catmat/Catser"]?.toLowerCase().includes(cat)) &&
-(!ini||(r.DataObj && r.DataObj>=ini)) &&
-(!fim||(r.DataObj && r.DataObj<=fim))
-)
-
-})
-
-renderTable(filteredData)
-updateCards(filteredData)
-
-}
-
-function clearFilters(){
-
-document.querySelectorAll("input").forEach(i=>i.value="")
-
-filteredData=originalData
-
-renderTable(filteredData)
-updateCards(filteredData)
-
-}
-
 function sortTable(col){
 
 filteredData.sort((a,b)=>{
@@ -473,8 +490,8 @@ filteredData.sort((a,b)=>{
 let v1=a[col]||""
 let v2=b[col]||""
 
-if(v1>v2) return sortDirection
-if(v1<v2) return -sortDirection
+if(v1>v2) return 1*sortDirection
+if(v1<v2) return -1*sortDirection
 return 0
 
 })
@@ -485,20 +502,152 @@ renderTable(filteredData)
 
 }
 
+function renderTable(data){
+
+const thead=document.querySelector("#dataTable thead")
+const tbody=document.querySelector("#dataTable tbody")
+
+thead.innerHTML=""
+tbody.innerHTML=""
+
+if(data.length===0){
+
+document.getElementById("contador").innerText="0 registros encontrados"
+return
+
+}
+
+const headers=Object.keys(data[0]).filter(h=>h!=="DataObj")
+
+let headerRow="<tr>"
+
+headers.forEach(h=>headerRow+=`<th onclick="sortTable('${h}')">${h}</th>`)
+
+headerRow+="</tr>"
+
+thead.innerHTML=headerRow
+
+let html=""
+
+data.forEach(row=>{
+
+let tr="<tr>"
+
+headers.forEach(h=>{
+
+let value=row[h]
+
+if(h==="Data da Homologação"){
+value=formatDateBR(row["DataObj"])
+}
+
+tr+=`<td>${value||""}</td>`
+
+})
+
+tr+="</tr>"
+
+html+=tr
+
+})
+
+tbody.innerHTML=html
+
+document.getElementById("contador").innerText=data.length+" registros encontrados"
+
+}
+
+function updateCards(data){
+
+document.getElementById("totalCompras").innerText=data.length
+
+let cnpjs=new Set()
+
+data.forEach(r=>{
+let cnpj=(r["CNPJ"]||"").replace(/\D/g,"")
+if(cnpj) cnpjs.add(cnpj)
+})
+
+document.getElementById("totalCNPJs").innerText=cnpjs.size
+
+let datas=data.map(r=>r["DataObj"]).filter(d=>d)
+
+if(datas.length>0){
+
+datas.sort((a,b)=>a-b)
+
+document.getElementById("periodo").innerText=
+formatDateBR(datas[0])+" a "+formatDateBR(datas[datas.length-1])
+
+}else{
+
+document.getElementById("periodo").innerText="-"
+
+}
+
+atualizarObservacao(cnpjs.size)
+
+}
+
+function applyFilters(){
+
+const uf=document.getElementById("ufFilter").value.toLowerCase()
+const mod=document.getElementById("modalidadeFilter").value.toLowerCase()
+const catmat=document.getElementById("catmatFilter").value.toLowerCase()
+const dataIni=document.getElementById("dataInicial").value
+const dataFim=document.getElementById("dataFinal").value
+
+filteredData=originalData.filter(r=>{
+
+let dataHom=r["DataObj"]
+
+let inicio=dataIni?new Date(dataIni):null
+let fim=dataFim?new Date(dataFim):null
+
+return(
+
+(!uf||(r["UF"]||"").toLowerCase().includes(uf)) &&
+(!mod||(r["Modalidade"]||"").toLowerCase().includes(mod)) &&
+(!catmat||(r["Catmat/Catser"]||"").toLowerCase().includes(catmat)) &&
+(!inicio||(dataHom && dataHom>=inicio)) &&
+(!fim||(dataHom && dataHom<=fim))
+
+)
+
+})
+
+updateDashboard(filteredData)
+
+}
+
+function clearFilters(){
+
+document.querySelectorAll("input").forEach(i=>i.value="")
+
+filteredData=[...originalData]
+
+updateDashboard(filteredData)
+
+}
+
 function downloadCSV(){
 
-if(!filteredData.length) return
+if(filteredData.length===0) return
+
+const headers=Object.keys(filteredData[0]).filter(h=>h!=="DataObj")
 
 let csv=headers.join(";")+"\n"
 
-for(let r of filteredData){
+filteredData.forEach(r=>{
 
 csv+=headers.map(h=>{
-if(h==="Data da Homologação") return formatDateBR(r.DataObj)
+
+if(h==="Data da Homologação") return formatDateBR(r["DataObj"])
 return r[h]||""
+
 }).join(";")+"\n"
 
-}
+})
 
 const blob=new Blob([csv],{type:"text/csv"})
 const url=URL.createObjectURL(blob)
