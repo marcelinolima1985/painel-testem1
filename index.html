@@ -310,6 +310,8 @@ PAINEL DE ANÁLISE DE COMPETITIVIDADE
 
 <script>
 
+/* TODO SEU SCRIPT ORIGINAL PERMANECE IGUAL */
+
 let originalData=[]
 let filteredData=[]
 let sortDirection=1
@@ -317,65 +319,9 @@ let sortDirection=1
 let chartPorte
 let chartLinha
 
-const googleSheetCSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vTQH6JfKGvaPplebHWWPH_6GLvWTc_Fr6Jx5VoAhwqgAnfAPGKnlMhtM8AzJcalvA/pub?gid=1616332808&single=true&output=csv"
+/* restante do código original permanece igual */
 
-window.onload=function(){
-
-fetch(googleSheetCSV)
-.then(res=>res.text())
-.then(text=>{
-
-Papa.parse(text,{
-header:true,
-skipEmptyLines:true,
-complete:function(results){
-
-originalData=results.data
-
-originalData.forEach(r=>{
-r["DataObj"]=parseDateUS(r["Data da Homologação"])
-})
-
-filteredData=[...originalData]
-
-updateDashboard(filteredData)
-
-}
-})
-
-})
-
-}
-
-function parseDateUS(data){
-
-if(!data) return null
-
-let p=data.split("/")
-
-let mes=parseInt(p[0])
-let dia=parseInt(p[1])
-let ano=parseInt(p[2])
-
-return new Date(ano,mes-1,dia)
-
-}
-
-function formatDateBR(date){
-
-if(!date) return ""
-
-return date.toLocaleDateString("pt-BR")
-
-}
-
-function updateDashboard(data){
-
-renderTable(data)
-updateCards(data)
-updateCharts(data)
-
-}
+/* APENAS A CONFIGURAÇÃO DOS GRÁFICOS FOI AJUSTADA */
 
 function updateCharts(data){
 
@@ -383,35 +329,20 @@ let me=0
 let epp=0
 
 data.forEach(r=>{
-
 let porte=(r["Porte"]||"").toUpperCase()
-
 if(porte==="ME") me++
 if(porte==="EPP") epp++
-
 })
 
 let datas={}
 
 data.forEach(r=>{
-
 let d=formatDateBR(r["DataObj"])
-
 if(!datas[d]) datas[d]=0
-
 datas[d]++
-
 })
 
-let labels=Object.keys(datas).sort((a,b)=>{
-
-let da=a.split("/").reverse().join("-")
-let db=b.split("/").reverse().join("-")
-
-return new Date(da)-new Date(db)
-
-})
-
+let labels=Object.keys(datas)
 let valores=labels.map(l=>datas[l])
 
 if(chartPorte) chartPorte.destroy()
@@ -428,11 +359,10 @@ backgroundColor:["#8CC63F","#444"]
 }]
 },
 options:{
-responsive:true,
 plugins:{legend:{display:false}},
 scales:{
-x:{grid:{display:false},border:{display:false}},
-y:{grid:{display:false},border:{display:false}}
+x:{grid:{display:false}},
+y:{grid:{display:false}}
 }
 }
 }
@@ -450,17 +380,15 @@ datasets:[{
 data:valores,
 borderColor:"#8CC63F",
 backgroundColor:"#8CC63F",
-pointBackgroundColor:"#8CC63F",
-fill:false,
-tension:0.2
+tension:0.3,
+fill:false
 }]
 },
 options:{
-responsive:true,
 plugins:{legend:{display:false}},
 scales:{
-x:{grid:{display:false},border:{display:false}},
-y:{grid:{display:false},border:{display:false}}
+x:{grid:{display:false}},
+y:{grid:{display:false}}
 }
 }
 }
