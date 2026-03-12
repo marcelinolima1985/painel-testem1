@@ -8,7 +8,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-/* === ESTILO ORIGINAL PRESERVADO === */
 body{
 font-family:Arial;
 margin:0;
@@ -37,6 +36,109 @@ color:#444;
 
 .container{padding:20px;}
 
+.filtros{
+display:grid;
+grid-template-columns:repeat(5,1fr);
+gap:15px;
+margin-bottom:20px;
+background:white;
+padding:15px;
+border-radius:8px;
+box-shadow:0 0 8px rgba(0,0,0,0.08);
+}
+
+label{font-size:12px;font-weight:bold;}
+
+input{
+width:100%;
+padding:6px;
+border:1px solid #ccc;
+border-radius:4px;
+}
+
+button{
+padding:8px 12px;
+border:none;
+border-radius:4px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.btn-aplicar{background:#8CC63F;color:white;}
+.btn-limpar{background:#C00000;color:white;}
+.btn-exportar{background:#444;color:white;}
+.btn-imprimir{background:#4285F4;color:white;}
+
+.indicadores{
+display:flex;
+gap:15px;
+margin-bottom:20px;
+}
+
+.card{
+flex:1;
+background:white;
+border-left:6px solid #8CC63F;
+padding:15px;
+border-radius:6px;
+box-shadow:0 0 6px rgba(0,0,0,0.06);
+text-align:center;
+}
+
+.card h3{margin:0;font-size:14px;}
+.card p{font-size:22px;font-weight:bold;margin-top:5px;}
+
+table{
+width:100%;
+border-collapse:collapse;
+background:white;
+font-size:12px;
+}
+
+th,td{
+border:1px solid #ddd;
+padding:6px;
+text-align:left;
+}
+
+th{
+background:#8CC63F;
+color:white;
+cursor:pointer;
+}
+
+#contador{
+font-weight:bold;
+margin-bottom:10px;
+}
+
+.observacao{
+margin-top:20px;
+padding:15px;
+border-radius:6px;
+font-size:14px;
+font-weight:bold;
+}
+
+.obs-positiva{
+background:#dff5e1;
+border-left:6px solid #2e7d32;
+color:#1b5e20;
+}
+
+.obs-negativa{
+background:#fde0e0;
+border-left:6px solid #c00000;
+color:#7a0000;
+}
+
+.fontes{
+margin-top:10px;
+font-size:11px;
+color:#555;
+text-align:left;
+}
+
 .graficos{
 display:grid;
 grid-template-columns:1fr 1fr;
@@ -61,11 +163,45 @@ text-align:center;
 
 <body>
 
+<div class="institucional">
+<div class="inst1">HOSPITAL UNIVERSITÁRIO LAURO WANDERLEY</div>
+<div class="inst2">UNIVERSIDADE FEDERAL DA PARAÍBA</div>
+<div class="inst3">EMPRESA BRASILEIRA DE SERVIÇOS HOSPITALARES</div>
+</div>
+
+<div class="header">PAINEL DE ANÁLISE DE COMPETITIVIDADE</div>
+
 <div class="container">
 
-<table id="dataTable"></table>
+<div class="filtros">
+<div><label>UF</label><input type="text" id="ufFilter"></div>
+<div><label>Modalidade</label><input type="text" id="modalidadeFilter"></div>
+<div><label>Data Inicial</label><input type="date" id="dataInicial"></div>
+<div><label>Data Final</label><input type="date" id="dataFinal"></div>
+<div><label>Catmat/Catser</label><input type="text" id="catmatFilter"></div>
+</div>
 
-<!-- GRÁFICOS -->
+<div style="margin-bottom:15px;">
+<button class="btn-aplicar" onclick="applyFilters()">Aplicar Filtros</button>
+<button class="btn-limpar" onclick="clearFilters()">Limpar</button>
+<button class="btn-exportar" onclick="downloadCSV()">Baixar CSV</button>
+<button class="btn-imprimir" onclick="window.print()">Imprimir</button>
+</div>
+
+<div class="indicadores">
+<div class="card"><h3>Total de Compras</h3><p id="totalCompras">0</p></div>
+<div class="card"><h3>Quantidade de Fornecedores</h3><p id="totalCNPJs">0</p></div>
+<div class="card"><h3>Período</h3><p id="periodo">-</p></div>
+</div>
+
+<div id="observacao"></div>
+<div id="contador"></div>
+
+<table id="dataTable">
+<thead></thead>
+<tbody></tbody>
+</table>
+
 <div class="graficos">
 
 <div class="grafico-card">
@@ -80,33 +216,75 @@ text-align:center;
 
 </div>
 
+<div class="fontes">
+<div>&lt;Fonte: https://dados.gov.br/dados/conjuntos-dados/compras-publicas-do-governo-federal&gt;</div>
+<div>&lt;Fonte: https://www.gov.br/pncp/pt-br&gt;</div>
+</div>
+
 </div>
 
 <script>
 
+let originalData=[]
+let filteredData=[]
+let sortDirection=1
+
 let chartPorte
 let chartLinha
 
+const googleSheetCSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vTQH6JfKGvaPplebHWWPH_6GLvWTc_Fr6Jx5VoAhwqgAnfAPGKnlMhtM8AzJcalvA/pub?gid=1616332808&single=true&output=csv"
+
+window.onload=function(){
+fetch(googleSheetCSV)
+.then(res=>res.text())
+.then(text=>{
+Papa.parse(text,{
+header:true,
+skipEmptyLines:true,
+complete:function(results){
+originalData=results.data
+originalData.forEach(r=>{
+r["DataObj"]=parseDateUS(r["Data da Homologação"])
+})
+filteredData=[...originalData]
+updateDashboard(filteredData)
+}
+})
+})
+}
+
 function updateCharts(data){
 
-let me=3
-let epp=1
+let me=0
+let epp=0
 
-let labels=["01/03/2025","02/03/2025","03/03/2025"]
-let valores=[1,2,3]
+data.forEach(r=>{
+let porte=(r["Porte"]||"").toUpperCase()
+if(porte==="ME") me++
+if(porte==="EPP") epp++
+})
 
-/* === GRÁFICO DE BARRAS (VERDE / SEM GRID) === */
+let datas={}
+data.forEach(r=>{
+let d=formatDateBR(r["DataObj"])
+if(!datas[d]) datas[d]=0
+datas[d]++
+})
+
+let labels=Object.keys(datas).sort((a,b)=>{
+let da=a.split("/").reverse().join("-")
+let db=b.split("/").reverse().join("-")
+return new Date(da)-new Date(db)
+})
+
+let valores=labels.map(l=>datas[l])
 
 if(chartPorte) chartPorte.destroy()
-
-chartPorte = new Chart(
-document.getElementById("graficoPorte"),
-{
+chartPorte=new Chart(document.getElementById("graficoPorte"),{
 type:"bar",
 data:{
 labels:["ME","EPP"],
 datasets:[{
-label:"Quantidade",
 data:[me,epp],
 backgroundColor:["#8CC63F","#2E7D32"],
 borderColor:["#558B2F","#1B5E20"],
@@ -117,32 +295,18 @@ options:{
 responsive:true,
 plugins:{legend:{display:false}},
 scales:{
-x:{
-grid:{display:false},
-border:{display:false}
-},
-y:{
-grid:{display:false},
-border:{display:false},
-ticks:{beginAtZero:true}
+x:{grid:{display:false},border:{display:false}},
+y:{grid:{display:false},border:{display:false},ticks:{beginAtZero:true}}
 }
 }
-}
-}
-)
-
-/* === GRÁFICO DE LINHA (VERDE / SEM GRID) === */
+})
 
 if(chartLinha) chartLinha.destroy()
-
-chartLinha = new Chart(
-document.getElementById("graficoTendencia"),
-{
+chartLinha=new Chart(document.getElementById("graficoTendencia"),{
 type:"line",
 data:{
 labels:labels,
 datasets:[{
-label:"Registros",
 data:valores,
 borderColor:"#2E7D32",
 backgroundColor:"#A5D6A7",
@@ -156,25 +320,14 @@ pointRadius:4
 options:{
 responsive:true,
 scales:{
-x:{
-grid:{display:false},
-border:{display:false}
-},
-y:{
-grid:{display:false},
-border:{display:false},
-ticks:{beginAtZero:true}
+x:{grid:{display:false},border:{display:false}},
+y:{grid:{display:false},border:{display:false},ticks:{beginAtZero:true}}
 }
 }
+})
 }
-}
-)
-
-}
-
-updateCharts([])
-
 </script>
 
 </body>
 </html>
+``
