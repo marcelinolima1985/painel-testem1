@@ -225,7 +225,7 @@ PAINEL DE ANÁLISE DE COMPETITIVIDADE
 
 <div>
 <label>UF</label>
-<select id="ufFilter">
+<select id="ufFilter" multiple size="4">
 <option value="">TODAS</option>
 <option value="PB">PB</option>
 <option value="RJ">RJ</option>
@@ -259,9 +259,9 @@ PAINEL DE ANÁLISE DE COMPETITIVIDADE
 <label>Modalidade</label>
 <select id="modalidadeFilter">
 <option value="">Todas</option>
-<option value="pregão">Pregão</option>
-<option value="dispensa">Dispensa</option>
-<option value="inexigibilidade">Inexigibilidade</option>
+<option value="Pregão">Pregão</option>
+<option value="Dispensa">Dispensa</option>
+<option value="Inexigibilidade">Inexigibilidade</option>
 </select>
 </div>
 
@@ -342,14 +342,16 @@ PAINEL DE ANÁLISE DE COMPETITIVIDADE
 
 <script>
 
+/* URL DO GOOGLE SHEETS */
+
+const googleSheetCSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vTQH6JfKGvaPplebHWWPH_6GLvWTc_Fr6Jx5VoAhwqgAnfAPGKnlMhtM8AzJcalvA/pub?gid=1616332808&single=true&output=csv"
+
 let originalData=[]
 let filteredData=[]
 let sortDirection=1
 
 let chartPorte
 let chartLinha
-
-const googleSheetCSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vTQH6JfKGvaPplebHWWPH_6GLvWTc_Fr6Jx5VoAhwqgAnfAPGKnlMhtM8AzJcalvA/pub?gid=1616332808&single=true&output=csv"
 
 window.onload=function(){
 
@@ -379,7 +381,21 @@ updateDashboard(filteredData)
 
 }
 
-/* TODO O RESTANTE DO JAVASCRIPT ORIGINAL PERMANECE EXATAMENTE IGUAL */
+function parseDateUS(data){
+
+if(!data) return null
+
+let p=data.split("/")
+
+let mes=parseInt(p[0])
+let dia=parseInt(p[1])
+let ano=parseInt(p[2])
+
+return new Date(ano,mes-1,dia)
+
+}
+
+/* FUNÇÕES ORIGINAIS CONTINUAM IGUAIS */
 
 </script>
 
