@@ -1,12 +1,3 @@
-<!--
-Resumo das alterações
-- Ajustado cálculo do gráfico de tendência para refletir evolução da QUANTIDADE DE FORNECEDORES únicos por Data da Homologação.
-- Inclusão de filtro adicional "Tipo" (Material ou Serviço) posicionado entre Modalidade e Data Inicial.
-- Filtros de UF, Modalidade e Tipo com MULTISSELEÇÃO (separação por vírgula) e comportamento equivalente à opção "Todas" quando vazio.
-- Mantida estrutura visual, layout, IDs, classes e integração com a base Google Sheet original.
-- Garantida compatibilidade com todos os filtros, cartões e gráficos existentes.
--->
-
 <!DOCTYPE html>
 <html lang="pt-br"> 
 <head>
@@ -233,18 +224,18 @@ PAINEL DE ANÁLISE DE COMPETITIVIDADE
 <div class="filtros">
 
 <div>
-<label>UF (multiseleção)</label>
-<input type="text" id="ufFilter" placeholder="PB,PE,RN">
+<label>UF</label>
+<input type="text" id="ufFilter" placeholder="PB,PE,RN...">
 </div>
 
 <div>
-<label>Modalidade (multiseleção)</label>
-<input type="text" id="modalidadeFilter">
+<label>Modalidade</label>
+<input type="text" id="modalidadeFilter" placeholder="Ex: Pregão,Dispensa,Inex...">
 </div>
 
 <div>
-<label>Tipo (Material ou Serviço)</label>
-<input type="text" id="tipoFilter" placeholder="Material, Serviço">
+<label>Tipo</label>
+<input type="text" id="tipoFilter" placeholder="Ex: Material,Serviço">
 </div>
 
 <div>
@@ -711,6 +702,5 @@ a.click()
 }
 
 </script>
-
 </body>
 </html>
