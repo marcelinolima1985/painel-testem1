@@ -224,13 +224,13 @@ PAINEL DE ANÁLISE DE COMPETITIVIDADE
 <div class="filtros">
 
 <div>
-<label>UF</label>
-<input type="text" id="ufFilter">
+<label>UF (multiseleção separada por vírgula)</label>
+<input type="text" id="ufFilter" placeholder="Ex: PB,PE,RN">
 </div>
 
 <div>
-<label>Modalidade</label>
-<input type="text" id="modalidadeFilter">
+<label>Modalidade (multiseleção separada por vírgula)</label>
+<input type="text" id="modalidadeFilter" placeholder="Ex: Pregão,Dispensa">
 </div>
 
 <div>
@@ -295,7 +295,7 @@ PAINEL DE ANÁLISE DE COMPETITIVIDADE
 </div>
 
 <div class="grafico-card">
-<h3>Tendência de Registros no Período</h3>
+<h3>Tendência de Fornecedores no Período</h3>
 <canvas id="graficoTendencia"></canvas>
 </div>
 
@@ -391,19 +391,29 @@ if(porte==="EPP") epp++
 
 })
 
-let datas={}
+/* Tendência baseada em fornecedores únicos por data */
+
+let fornecedoresPorData={}
 
 data.forEach(r=>{
 
-let d=formatDateBR(r["DataObj"])
+if(!r["DataObj"]) return
 
-if(!datas[d]) datas[d]=0
+let dataKey=formatDateBR(r["DataObj"])
 
-datas[d]++
+let cnpj=(r["CNPJ"]||"").replace(/\D/g,"")
+
+if(!fornecedoresPorData[dataKey]){
+fornecedoresPorData[dataKey]=new Set()
+}
+
+if(cnpj){
+fornecedoresPorData[dataKey].add(cnpj)
+}
 
 })
 
-let labels=Object.keys(datas).sort((a,b)=>{
+let labels=Object.keys(fornecedoresPorData).sort((a,b)=>{
 
 let da=a.split("/").reverse().join("-")
 let db=b.split("/").reverse().join("-")
@@ -412,7 +422,7 @@ return new Date(da)-new Date(db)
 
 })
 
-let valores=labels.map(l=>datas[l])
+let valores=labels.map(l=>fornecedoresPorData[l].size)
 
 if(chartPorte) chartPorte.destroy()
 
@@ -448,7 +458,7 @@ type:"line",
 data:{
 labels:labels,
 datasets:[{
-label:"Registros",
+label:"Fornecedores",
 data:valores,
 fill:false,
 tension:0.2,
@@ -596,11 +606,33 @@ atualizarObservacao(cnpjs.size)
 
 }
 
+function parseMultiSelect(text){
+
+if(!text) return []
+
+return text
+.split(",")
+.map(v=>v.trim().toLowerCase())
+.filter(v=>v!=="")
+}
+
+function matchMulti(value,lista){
+
+if(lista.length===0) return true
+
+let v=(value||"").toLowerCase()
+
+return lista.some(f=>v.includes(f))
+
+}
+
 function applyFilters(){
 
-const uf=document.getElementById("ufFilter").value.toLowerCase()
-const mod=document.getElementById("modalidadeFilter").value.toLowerCase()
+const uf=parseMultiSelect(document.getElementById("ufFilter").value)
+const mod=parseMultiSelect(document.getElementById("modalidadeFilter").value)
+
 const catmat=document.getElementById("catmatFilter").value.toLowerCase()
+
 const dataIni=document.getElementById("dataInicial").value
 const dataFim=document.getElementById("dataFinal").value
 
@@ -613,8 +645,8 @@ let fim=dataFim?new Date(dataFim):null
 
 return(
 
-(!uf||(r["UF"]||"").toLowerCase().includes(uf)) &&
-(!mod||(r["Modalidade"]||"").toLowerCase().includes(mod)) &&
+matchMulti(r["UF"],uf) &&
+matchMulti(r["Modalidade"],mod) &&
 (!catmat||(r["Catmat/Catser"]||"").toLowerCase().includes(catmat)) &&
 (!inicio||(dataHom && dataHom>=inicio)) &&
 (!fim||(dataHom && dataHom<=fim))
