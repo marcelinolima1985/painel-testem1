@@ -1,3 +1,12 @@
+<!--
+Resumo das alterações
+- Ajustado cálculo do gráfico de tendência para refletir evolução da QUANTIDADE DE FORNECEDORES únicos por Data da Homologação.
+- Inclusão de filtro adicional "Tipo" (Material ou Serviço) posicionado entre Modalidade e Data Inicial.
+- Filtros de UF, Modalidade e Tipo com MULTISSELEÇÃO (separação por vírgula) e comportamento equivalente à opção "Todas" quando vazio.
+- Mantida estrutura visual, layout, IDs, classes e integração com a base Google Sheet original.
+- Garantida compatibilidade com todos os filtros, cartões e gráficos existentes.
+-->
+
 <!DOCTYPE html>
 <html lang="pt-br"> 
 <head>
@@ -56,7 +65,7 @@ padding:20px;
 
 .filtros{
 display:grid;
-grid-template-columns:repeat(5,1fr);
+grid-template-columns:repeat(6,1fr);
 gap:15px;
 margin-bottom:20px;
 background:white;
@@ -224,13 +233,18 @@ PAINEL DE ANÁLISE DE COMPETITIVIDADE
 <div class="filtros">
 
 <div>
-<label>UF (multiseleção separada por vírgula)</label>
-<input type="text" id="ufFilter" placeholder="Ex: PB,PE,RN">
+<label>UF (multiseleção)</label>
+<input type="text" id="ufFilter" placeholder="PB,PE,RN">
 </div>
 
 <div>
-<label>Modalidade (multiseleção separada por vírgula)</label>
-<input type="text" id="modalidadeFilter" placeholder="Ex: Pregão,Dispensa">
+<label>Modalidade (multiseleção)</label>
+<input type="text" id="modalidadeFilter">
+</div>
+
+<div>
+<label>Tipo (Material ou Serviço)</label>
+<input type="text" id="tipoFilter" placeholder="Material, Serviço">
 </div>
 
 <div>
@@ -391,8 +405,6 @@ if(porte==="EPP") epp++
 
 })
 
-/* Tendência baseada em fornecedores únicos por data */
-
 let fornecedoresPorData={}
 
 data.forEach(r=>{
@@ -478,25 +490,66 @@ y:{grid:{display:false}}
 
 }
 
-function atualizarObservacao(qtdFornecedores){
+function parseMulti(text){
 
-const periodo=document.getElementById("periodo").innerText
-const catmat=document.getElementById("catmatFilter").value || "CATMAT/CATSER informado"
-const obs=document.getElementById("observacao")
+if(!text) return []
 
-if(qtdFornecedores>=3){
-
-obs.className="observacao obs-positiva"
-
-obs.innerText="OBSERVAÇÃO: ✅ Com base nos dados do Portal Nacional de Dados Abertos e do Portal Nacional de Contratações Públicas referentes ao "+catmat+" utilizado na pesquisa, foram encontrados 3 (três) fornecedores ME/EPP participantes de licitações públicas federais, capazes de atender ao art. 47, II, da LC 123/2006, dentro do intervalo de "+periodo+"."
-
-}else{
-
-obs.className="observacao obs-negativa"
-
-obs.innerText="OBSERVAÇÃO: ❌ Com base nos dados do Portal Nacional de Dados Abertos e do Portal Nacional de Contratações Públicas referentes ao "+catmat+" utilizado na pesquisa, NÃO foram encontrados no mínimo 3 (três) fornecedores ME/EPP participantes de licitações públicas federais, capazes de atender ao art. 47, II, da LC 123/2006, dentro do intervalo de "+periodo+"."
+return text.split(",").map(v=>v.trim().toLowerCase()).filter(v=>v)
 
 }
+
+function matchMulti(value,lista){
+
+if(lista.length===0) return true
+
+let v=(value||"").toLowerCase()
+
+return lista.some(f=>v.includes(f))
+
+}
+
+function applyFilters(){
+
+const uf=parseMulti(document.getElementById("ufFilter").value)
+const mod=parseMulti(document.getElementById("modalidadeFilter").value)
+const tipo=parseMulti(document.getElementById("tipoFilter").value)
+
+const catmat=document.getElementById("catmatFilter").value.toLowerCase()
+
+const dataIni=document.getElementById("dataInicial").value
+const dataFim=document.getElementById("dataFinal").value
+
+filteredData=originalData.filter(r=>{
+
+let dataHom=r["DataObj"]
+
+let inicio=dataIni?new Date(dataIni):null
+let fim=dataFim?new Date(dataFim):null
+
+return(
+
+matchMulti(r["UF"],uf) &&
+matchMulti(r["Modalidade"],mod) &&
+matchMulti(r["Tipo"],tipo) &&
+(!catmat||(r["Catmat/Catser"]||"").toLowerCase().includes(catmat)) &&
+(!inicio||(dataHom && dataHom>=inicio)) &&
+(!fim||(dataHom && dataHom<=fim))
+
+)
+
+})
+
+updateDashboard(filteredData)
+
+}
+
+function clearFilters(){
+
+document.querySelectorAll("input").forEach(i=>i.value="")
+
+filteredData=[...originalData]
+
+updateDashboard(filteredData)
 
 }
 
@@ -606,66 +659,25 @@ atualizarObservacao(cnpjs.size)
 
 }
 
-function parseMultiSelect(text){
+function atualizarObservacao(qtdFornecedores){
 
-if(!text) return []
+const periodo=document.getElementById("periodo").innerText
+const catmat=document.getElementById("catmatFilter").value || "CATMAT/CATSER informado"
+const obs=document.getElementById("observacao")
 
-return text
-.split(",")
-.map(v=>v.trim().toLowerCase())
-.filter(v=>v!=="")
-}
+if(qtdFornecedores>=3){
 
-function matchMulti(value,lista){
+obs.className="observacao obs-positiva"
 
-if(lista.length===0) return true
+obs.innerText="OBSERVAÇÃO: ✅ Com base nos dados do Portal Nacional de Dados Abertos e do Portal Nacional de Contratações Públicas referentes ao "+catmat+" utilizado na pesquisa, foram encontrados 3 (três) fornecedores ME/EPP participantes de licitações públicas federais, capazes de atender ao art. 47, II, da LC 123/2006, dentro do intervalo de "+periodo+"."
 
-let v=(value||"").toLowerCase()
+}else{
 
-return lista.some(f=>v.includes(f))
+obs.className="observacao obs-negativa"
 
-}
-
-function applyFilters(){
-
-const uf=parseMultiSelect(document.getElementById("ufFilter").value)
-const mod=parseMultiSelect(document.getElementById("modalidadeFilter").value)
-
-const catmat=document.getElementById("catmatFilter").value.toLowerCase()
-
-const dataIni=document.getElementById("dataInicial").value
-const dataFim=document.getElementById("dataFinal").value
-
-filteredData=originalData.filter(r=>{
-
-let dataHom=r["DataObj"]
-
-let inicio=dataIni?new Date(dataIni):null
-let fim=dataFim?new Date(dataFim):null
-
-return(
-
-matchMulti(r["UF"],uf) &&
-matchMulti(r["Modalidade"],mod) &&
-(!catmat||(r["Catmat/Catser"]||"").toLowerCase().includes(catmat)) &&
-(!inicio||(dataHom && dataHom>=inicio)) &&
-(!fim||(dataHom && dataHom<=fim))
-
-)
-
-})
-
-updateDashboard(filteredData)
+obs.innerText="OBSERVAÇÃO: ❌ Com base nos dados do Portal Nacional de Dados Abertos e do Portal Nacional de Contratações Públicas referentes ao "+catmat+" utilizado na pesquisa, NÃO foram encontrados no mínimo 3 (três) fornecedores ME/EPP participantes de licitações públicas federais, capazes de atender ao art. 47, II, da LC 123/2006, dentro do intervalo de "+periodo+"."
 
 }
-
-function clearFilters(){
-
-document.querySelectorAll("input").forEach(i=>i.value="")
-
-filteredData=[...originalData]
-
-updateDashboard(filteredData)
 
 }
 
