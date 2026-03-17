@@ -57,7 +57,7 @@ padding:20px;
 .filtros{
 display:grid;
 grid-template-columns:repeat(6,1fr);
-gap:20px;
+gap:15px;
 margin-bottom:20px;
 background:white;
 padding:15px;
@@ -138,7 +138,6 @@ cursor:pointer;
 
 #contador{
 font-weight:bold;
-margin-top: 10px;
 margin-bottom:10px;
 }
 
@@ -226,24 +225,19 @@ PAINEL DE ANÁLISE DE COMPETITIVIDADE
 
 <div>
 <label>UF</label>
-<input type="text" id="ufFilter" placeholder="PB,PE,RN...">
+<input type="text" id="ufFilter">
 </div>
 
 <div>
 <label>Modalidade</label>
-<input type="text" id="modalidadeFilter" placeholder="Ex: Pregão,Dispensa,Inex...">
+<input type="text" id="modalidadeFilter">
 </div>
 
 <div>
-<label>Tipo</label>
-<input type="text" id="tipoFilter" placeholder="Ex: Material,Serviço">
+<label>Tipo (Material ou Serviço)</label>
+<input type="text" id="tipoFilter">
 </div>
 
-<div>
-<label>Catmat/Catser</label>
-<input type="text" id="catmatFilter">
-</div>
-  
 <div>
 <label>Data Inicial</label>
 <input type="date" id="dataInicial">
@@ -252,6 +246,11 @@ PAINEL DE ANÁLISE DE COMPETITIVIDADE
 <div>
 <label>Data Final</label>
 <input type="date" id="dataFinal">
+</div>
+
+<div>
+<label>Catmat/Catser</label>
+<input type="text" id="catmatFilter">
 </div>
 
 </div>
@@ -320,38 +319,10 @@ let originalData=[]
 let filteredData=[]
 let sortDirection=1
 
-let chartPorte
-let chartLinha
+let chartPorte=null
+let chartLinha=null
 
 const googleSheetCSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vTQH6JfKGvaPplebHWWPH_6GLvWTc_Fr6Jx5VoAhwqgAnfAPGKnlMhtM8AzJcalvA/pub?gid=1616332808&single=true&output=csv"
-
-window.onload=function(){
-
-fetch(googleSheetCSV)
-.then(res=>res.text())
-.then(text=>{
-
-Papa.parse(text,{
-header:true,
-skipEmptyLines:true,
-complete:function(results){
-
-originalData=results.data
-
-originalData.forEach(r=>{
-r["DataObj"]=parseDateUS(r["Data da Homologação"])
-})
-
-filteredData=[...originalData]
-
-updateDashboard(filteredData)
-
-}
-})
-
-})
-
-}
 
 function parseDateUS(data){
 
@@ -370,122 +341,13 @@ return new Date(ano,mes-1,dia)
 function formatDateBR(date){
 
 if(!date) return ""
-
 return date.toLocaleDateString("pt-BR")
-
-}
-
-function updateDashboard(data){
-
-renderTable(data)
-updateCards(data)
-updateCharts(data)
-
-}
-
-function updateCharts(data){
-
-let me=0
-let epp=0
-
-data.forEach(r=>{
-
-let porte=(r["Porte"]||"").toUpperCase()
-
-if(porte==="ME") me++
-if(porte==="EPP") epp++
-
-})
-
-let fornecedoresPorData={}
-
-data.forEach(r=>{
-
-if(!r["DataObj"]) return
-
-let dataKey=formatDateBR(r["DataObj"])
-
-let cnpj=(r["CNPJ"]||"").replace(/\D/g,"")
-
-if(!fornecedoresPorData[dataKey]){
-fornecedoresPorData[dataKey]=new Set()
-}
-
-if(cnpj){
-fornecedoresPorData[dataKey].add(cnpj)
-}
-
-})
-
-let labels=Object.keys(fornecedoresPorData).sort((a,b)=>{
-
-let da=a.split("/").reverse().join("-")
-let db=b.split("/").reverse().join("-")
-
-return new Date(da)-new Date(db)
-
-})
-
-let valores=labels.map(l=>fornecedoresPorData[l].size)
-
-if(chartPorte) chartPorte.destroy()
-
-chartPorte=new Chart(
-document.getElementById("graficoPorte"),
-{
-type:"bar",
-data:{
-labels:["ME","EPP"],
-datasets:[{
-label:"Quantidade",
-data:[me,epp],
-backgroundColor:["#8CC63F","#444"]
-}]
-},
-options:{
-responsive:true,
-plugins:{legend:{display:false}},
-scales:{
-x:{grid:{display:false}},
-y:{grid:{display:false}}
-}
-}
-}
-)
-
-if(chartLinha) chartLinha.destroy()
-
-chartLinha=new Chart(
-document.getElementById("graficoTendencia"),
-{
-type:"line",
-data:{
-labels:labels,
-datasets:[{
-label:"Fornecedores",
-data:valores,
-fill:false,
-tension:0.2,
-borderColor:"#8CC63F",
-backgroundColor:"#8CC63F"
-}]
-},
-options:{
-responsive:true,
-scales:{
-x:{grid:{display:false}},
-y:{grid:{display:false}}
-}
-}
-}
-)
 
 }
 
 function parseMulti(text){
 
 if(!text) return []
-
 return text.split(",").map(v=>v.trim().toLowerCase()).filter(v=>v)
 
 }
@@ -502,10 +364,35 @@ return lista.some(f=>v.includes(f))
 
 function applyFilters(){
 
+fetch(googleSheetCSV)
+.then(res=>res.text())
+.then(text=>{
+
+Papa.parse(text,{
+header:true,
+skipEmptyLines:true,
+complete:function(results){
+
+originalData=results.data
+
+originalData.forEach(r=>{
+r["DataObj"]=parseDateUS(r["Data da Homologação"])
+})
+
+filterAndRender()
+
+}
+})
+
+})
+
+}
+
+function filterAndRender(){
+
 const uf=parseMulti(document.getElementById("ufFilter").value)
 const mod=parseMulti(document.getElementById("modalidadeFilter").value)
 const tipo=parseMulti(document.getElementById("tipoFilter").value)
-
 const catmat=document.getElementById("catmatFilter").value.toLowerCase()
 
 const dataIni=document.getElementById("dataInicial").value
@@ -539,28 +426,23 @@ function clearFilters(){
 
 document.querySelectorAll("input").forEach(i=>i.value="")
 
-filteredData=[...originalData]
+originalData=[]
+filteredData=[]
 
-updateDashboard(filteredData)
+renderTable([])
+updateCards([])
+updateCharts([])
+
+document.getElementById("observacao").innerHTML=""
+document.getElementById("contador").innerHTML=""
 
 }
 
-function sortTable(col){
+function updateDashboard(data){
 
-filteredData.sort((a,b)=>{
-
-let v1=a[col]||""
-let v2=b[col]||""
-
-if(v1>v2) return 1*sortDirection
-if(v1<v2) return -1*sortDirection
-return 0
-
-})
-
-sortDirection*=-1
-
-renderTable(filteredData)
+renderTable(data)
+updateCards(data)
+updateCharts(data)
 
 }
 
@@ -573,10 +455,8 @@ thead.innerHTML=""
 tbody.innerHTML=""
 
 if(data.length===0){
-
-document.getElementById("contador").innerText="0 registros encontrados"
+document.getElementById("contador").innerText=""
 return
-
 }
 
 const headers=Object.keys(data[0]).filter(h=>h!=="DataObj")
@@ -608,7 +488,6 @@ tr+=`<td>${value||""}</td>`
 })
 
 tr+="</tr>"
-
 html+=tr
 
 })
@@ -647,29 +526,104 @@ document.getElementById("periodo").innerText="-"
 
 }
 
-atualizarObservacao(cnpjs.size)
+}
+
+function updateCharts(data){
+
+if(chartPorte){chartPorte.destroy(); chartPorte=null}
+if(chartLinha){chartLinha.destroy(); chartLinha=null}
+
+if(data.length===0) return
+
+let me=0
+let epp=0
+
+data.forEach(r=>{
+let porte=(r["Porte"]||"").toUpperCase()
+if(porte==="ME") me++
+if(porte==="EPP") epp++
+})
+
+let fornecedoresPorData={}
+
+data.forEach(r=>{
+
+if(!r["DataObj"]) return
+
+let dataKey=formatDateBR(r["DataObj"])
+
+let cnpj=(r["CNPJ"]||"").replace(/\D/g,"")
+
+if(!fornecedoresPorData[dataKey]){
+fornecedoresPorData[dataKey]=new Set()
+}
+
+if(cnpj){
+fornecedoresPorData[dataKey].add(cnpj)
+}
+
+})
+
+let labels=Object.keys(fornecedoresPorData).sort((a,b)=>{
+
+let da=a.split("/").reverse().join("-")
+let db=b.split("/").reverse().join("-")
+
+return new Date(da)-new Date(db)
+
+})
+
+let valores=labels.map(l=>fornecedoresPorData[l].size)
+
+chartPorte=new Chart(
+document.getElementById("graficoPorte"),
+{
+type:"bar",
+data:{
+labels:["ME","EPP"],
+datasets:[{
+label:"Quantidade",
+data:[me,epp],
+backgroundColor:["#8CC63F","#444"]
+}]
+},
+options:{plugins:{legend:{display:false}}}
+})
+
+chartLinha=new Chart(
+document.getElementById("graficoTendencia"),
+{
+type:"line",
+data:{
+labels:labels,
+datasets:[{
+label:"Fornecedores",
+data:valores,
+borderColor:"#8CC63F",
+backgroundColor:"#8CC63F",
+tension:0.2
+}]
+}
+})
 
 }
 
-function atualizarObservacao(qtdFornecedores){
+function sortTable(col){
 
-const periodo=document.getElementById("periodo").innerText
-const catmat=document.getElementById("catmatFilter").value || "CATMAT/CATSER informado"
-const obs=document.getElementById("observacao")
+filteredData.sort((a,b)=>{
 
-if(qtdFornecedores>=3){
+let v1=a[col]||""
+let v2=b[col]||""
 
-obs.className="observacao obs-positiva"
+if(v1>v2) return 1*sortDirection
+if(v1<v2) return -1*sortDirection
+return 0
 
-obs.innerText="OBSERVAÇÃO: ✅ Com base nos dados do Portal Nacional de Dados Abertos e do Portal Nacional de Contratações Públicas referentes ao "+catmat+" utilizado na pesquisa, foram encontrados 3 (três) fornecedores ME/EPP participantes de licitações públicas federais, capazes de atender ao art. 47, II, da LC 123/2006, dentro do intervalo de "+periodo+"."
+})
 
-}else{
+sortDirection*=-1
 
-obs.className="observacao obs-negativa"
-
-obs.innerText="OBSERVAÇÃO: ❌ Com base nos dados do Portal Nacional de Dados Abertos e do Portal Nacional de Contratações Públicas referentes ao "+catmat+" utilizado na pesquisa, NÃO foram encontrados no mínimo 3 (três) fornecedores ME/EPP participantes de licitações públicas federais, capazes de atender ao art. 47, II, da LC 123/2006, dentro do intervalo de "+periodo+"."
-
-}
+renderTable(filteredData)
 
 }
 
@@ -684,10 +638,8 @@ let csv=headers.join(";")+"\n"
 filteredData.forEach(r=>{
 
 csv+=headers.map(h=>{
-
 if(h==="Data da Homologação") return formatDateBR(r["DataObj"])
 return r[h]||""
-
 }).join(";")+"\n"
 
 })
@@ -703,5 +655,6 @@ a.click()
 }
 
 </script>
+
 </body>
 </html>
