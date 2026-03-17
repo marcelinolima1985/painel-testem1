@@ -1,12 +1,3 @@
-<!--
-Resumo das alterações
-- Restaurado o card de OBSERVAÇÃO com lógica original (positiva/negativa conforme quantidade de fornecedores).
-- Implementado carregamento sob demanda: dados do Google Sheets só são buscados ao clicar em "Aplicar Filtros".
-- Adicionado overlay/modal de "Carregando..." exibido durante a consulta e processamento dos dados.
-- Ao clicar em "Limpar", o painel volta ao estado inicial em branco (sem dados).
-- Mantida estrutura, layout, IDs, classes e integração com a base original.
--->
-
 <!DOCTYPE html>
 <html lang="pt-br"> 
 <head>
@@ -66,7 +57,7 @@ padding:20px;
 .filtros{
 display:grid;
 grid-template-columns:repeat(6,1fr);
-gap:15px;
+gap:20px;
 margin-bottom:20px;
 background:white;
 padding:15px;
@@ -147,6 +138,7 @@ cursor:pointer;
 
 #contador{
 font-weight:bold;
+margin-top: 10px;
 margin-bottom:10px;
 }
 
