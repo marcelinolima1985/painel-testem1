@@ -1,3 +1,12 @@
+<!--
+Resumo das alterações
+- Restaurado o card de OBSERVAÇÃO com lógica original (positiva/negativa conforme quantidade de fornecedores).
+- Implementado carregamento sob demanda: dados do Google Sheets só são buscados ao clicar em "Aplicar Filtros".
+- Adicionado overlay/modal de "Carregando..." exibido durante a consulta e processamento dos dados.
+- Ao clicar em "Limpar", o painel volta ao estado inicial em branco (sem dados).
+- Mantida estrutura, layout, IDs, classes e integração com a base original.
+-->
+
 <!DOCTYPE html>
 <html lang="pt-br"> 
 <head>
@@ -188,6 +197,30 @@ font-size:14px;
 text-align:center;
 }
 
+/* Overlay carregando */
+#loadingOverlay{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.4);
+display:none;
+align-items:center;
+justify-content:center;
+z-index:9999;
+}
+
+#loadingBox{
+background:white;
+padding:20px 30px;
+border-radius:8px;
+font-weight:bold;
+font-size:18px;
+color:#444;
+box-shadow:0 0 10px rgba(0,0,0,0.2);
+}
+
 @media print{
 
 @page{
@@ -208,6 +241,10 @@ display:none;
 </head>
 
 <body>
+
+<div id="loadingOverlay">
+<div id="loadingBox">Carregando...</div>
+</div>
 
 <div class="institucional">
 <div class="inst1">HOSPITAL UNIVERSITÁRIO LAURO WANDERLEY</div>
@@ -324,45 +361,39 @@ let chartLinha=null
 
 const googleSheetCSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vTQH6JfKGvaPplebHWWPH_6GLvWTc_Fr6Jx5VoAhwqgAnfAPGKnlMhtM8AzJcalvA/pub?gid=1616332808&single=true&output=csv"
 
+function showLoading(){
+document.getElementById("loadingOverlay").style.display="flex"
+}
+
+function hideLoading(){
+document.getElementById("loadingOverlay").style.display="none"
+}
+
 function parseDateUS(data){
-
 if(!data) return null
-
 let p=data.split("/")
-
-let mes=parseInt(p[0])
-let dia=parseInt(p[1])
-let ano=parseInt(p[2])
-
-return new Date(ano,mes-1,dia)
-
+return new Date(p[2],p[0]-1,p[1])
 }
 
 function formatDateBR(date){
-
 if(!date) return ""
 return date.toLocaleDateString("pt-BR")
-
 }
 
 function parseMulti(text){
-
 if(!text) return []
 return text.split(",").map(v=>v.trim().toLowerCase()).filter(v=>v)
-
 }
 
 function matchMulti(value,lista){
-
 if(lista.length===0) return true
-
 let v=(value||"").toLowerCase()
-
 return lista.some(f=>v.includes(f))
-
 }
 
 function applyFilters(){
+
+showLoading()
 
 fetch(googleSheetCSV)
 .then(res=>res.text())
@@ -380,6 +411,7 @@ r["DataObj"]=parseDateUS(r["Data da Homologação"])
 })
 
 filterAndRender()
+hideLoading()
 
 }
 })
@@ -462,9 +494,7 @@ return
 const headers=Object.keys(data[0]).filter(h=>h!=="DataObj")
 
 let headerRow="<tr>"
-
 headers.forEach(h=>headerRow+=`<th onclick="sortTable('${h}')">${h}</th>`)
-
 headerRow+="</tr>"
 
 thead.innerHTML=headerRow
@@ -472,24 +502,16 @@ thead.innerHTML=headerRow
 let html=""
 
 data.forEach(row=>{
-
 let tr="<tr>"
-
 headers.forEach(h=>{
-
 let value=row[h]
-
 if(h==="Data da Homologação"){
 value=formatDateBR(row["DataObj"])
 }
-
 tr+=`<td>${value||""}</td>`
-
 })
-
 tr+="</tr>"
 html+=tr
-
 })
 
 tbody.innerHTML=html
@@ -514,15 +536,32 @@ document.getElementById("totalCNPJs").innerText=cnpjs.size
 let datas=data.map(r=>r["DataObj"]).filter(d=>d)
 
 if(datas.length>0){
-
 datas.sort((a,b)=>a-b)
-
 document.getElementById("periodo").innerText=
 formatDateBR(datas[0])+" a "+formatDateBR(datas[datas.length-1])
+}else{
+document.getElementById("periodo").innerText="-"
+}
+
+atualizarObservacao(cnpjs.size)
+
+}
+
+function atualizarObservacao(qtdFornecedores){
+
+const periodo=document.getElementById("periodo").innerText
+const catmat=document.getElementById("catmatFilter").value || "CATMAT/CATSER informado"
+const obs=document.getElementById("observacao")
+
+if(qtdFornecedores>=3){
+
+obs.className="observacao obs-positiva"
+obs.innerText="OBSERVAÇÃO: ✅ Com base nos dados do Portal Nacional de Dados Abertos e do Portal Nacional de Contratações Públicas referentes ao "+catmat+" utilizado na pesquisa, foram encontrados 3 (três) fornecedores ME/EPP participantes de licitações públicas federais, capazes de atender ao art. 47, II, da LC 123/2006, dentro do intervalo de "+periodo+"."
 
 }else{
 
-document.getElementById("periodo").innerText="-"
+obs.className="observacao obs-negativa"
+obs.innerText="OBSERVAÇÃO: ❌ Com base nos dados do Portal Nacional de Dados Abertos e do Portal Nacional de Contratações Públicas referentes ao "+catmat+" utilizado na pesquisa, NÃO foram encontrados no mínimo 3 (três) fornecedores ME/EPP participantes de licitações públicas federais, capazes de atender ao art. 47, II, da LC 123/2006, dentro do intervalo de "+periodo+"."
 
 }
 
@@ -551,7 +590,6 @@ data.forEach(r=>{
 if(!r["DataObj"]) return
 
 let dataKey=formatDateBR(r["DataObj"])
-
 let cnpj=(r["CNPJ"]||"").replace(/\D/g,"")
 
 if(!fornecedoresPorData[dataKey]){
@@ -565,45 +603,22 @@ fornecedoresPorData[dataKey].add(cnpj)
 })
 
 let labels=Object.keys(fornecedoresPorData).sort((a,b)=>{
-
 let da=a.split("/").reverse().join("-")
 let db=b.split("/").reverse().join("-")
-
 return new Date(da)-new Date(db)
-
 })
 
 let valores=labels.map(l=>fornecedoresPorData[l].size)
 
-chartPorte=new Chart(
-document.getElementById("graficoPorte"),
-{
+chartPorte=new Chart(document.getElementById("graficoPorte"),{
 type:"bar",
-data:{
-labels:["ME","EPP"],
-datasets:[{
-label:"Quantidade",
-data:[me,epp],
-backgroundColor:["#8CC63F","#444"]
-}]
-},
+data:{labels:["ME","EPP"],datasets:[{data:[me,epp],backgroundColor:["#8CC63F","#444"]}]},
 options:{plugins:{legend:{display:false}}}
 })
 
-chartLinha=new Chart(
-document.getElementById("graficoTendencia"),
-{
+chartLinha=new Chart(document.getElementById("graficoTendencia"),{
 type:"line",
-data:{
-labels:labels,
-datasets:[{
-label:"Fornecedores",
-data:valores,
-borderColor:"#8CC63F",
-backgroundColor:"#8CC63F",
-tension:0.2
-}]
-}
+data:{labels:labels,datasets:[{data:valores,borderColor:"#8CC63F",backgroundColor:"#8CC63F",tension:0.2}]}
 })
 
 }
@@ -611,18 +626,14 @@ tension:0.2
 function sortTable(col){
 
 filteredData.sort((a,b)=>{
-
 let v1=a[col]||""
 let v2=b[col]||""
-
 if(v1>v2) return 1*sortDirection
 if(v1<v2) return -1*sortDirection
 return 0
-
 })
 
 sortDirection*=-1
-
 renderTable(filteredData)
 
 }
@@ -636,12 +647,10 @@ const headers=Object.keys(filteredData[0]).filter(h=>h!=="DataObj")
 let csv=headers.join(";")+"\n"
 
 filteredData.forEach(r=>{
-
 csv+=headers.map(h=>{
 if(h==="Data da Homologação") return formatDateBR(r["DataObj"])
 return r[h]||""
 }).join(";")+"\n"
-
 })
 
 const blob=new Blob([csv],{type:"text/csv"})
