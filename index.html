@@ -263,7 +263,7 @@ PAINEL DE ANÁLISE DE COMPETITIVIDADE
 </div>
 
 <div>
-<label>Tipo (Material ou Serviço)</label>
+<label>Tipo</label>
 <input type="text" id="tipoFilter">
 </div>
 
@@ -604,13 +604,36 @@ let valores=labels.map(l=>fornecedoresPorData[l].size)
 
 chartPorte=new Chart(document.getElementById("graficoPorte"),{
 type:"bar",
-data:{labels:["ME","EPP"],datasets:[{data:[me,epp],backgroundColor:["#8CC63F","#444"]}]},
+data:{
+labels:["ME","EPP"],
+datasets:[{
+label:"Quantidade",
+data:[me,epp],
+backgroundColor:["#8CC63F","#444"]
+}]
+},
 options:{plugins:{legend:{display:false}}}
 })
 
 chartLinha=new Chart(document.getElementById("graficoTendencia"),{
 type:"line",
-data:{labels:labels,datasets:[{data:valores,borderColor:"#8CC63F",backgroundColor:"#8CC63F",tension:0.2}]}
+data:{
+labels:labels,
+datasets:[{
+label:"Fornecedores", // ✅ CORREÇÃO AQUI
+data:valores,
+borderColor:"#8CC63F",
+backgroundColor:"#8CC63F",
+tension:0.2
+}]
+},
+options:{
+plugins:{
+legend:{
+display:true
+}
+}
+}
 })
 
 }
