@@ -361,10 +361,10 @@ function hideLoading(){
 document.getElementById("loadingOverlay").style.display="none"
 }
 
-function parseDateUS(data){
+function parseDateBR(data){
 if(!data) return null
 let p=data.split("/")
-return new Date(p[2],p[0]-1,p[1])
+return new Date(p[2], p[1]-1, p[0])
 }
 
 function formatDateBR(date){
@@ -399,7 +399,7 @@ complete:function(results){
 originalData=results.data
 
 originalData.forEach(r=>{
-r["DataObj"]=parseDateUS(r["Data da Homologação"])
+r["DataObj"]=parseDateBR(r["Data da Homologação"])
 })
 
 filterAndRender()
