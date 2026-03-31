@@ -213,20 +213,55 @@ color:#444;
 box-shadow:0 0 10px rgba(0,0,0,0.2);
 }
 
+@media print {
+
+  @page{
+    size: landscape;
+  }
+
+  /* REMOVE posicionamento absoluto do logo */
+  img{
+    position: static !important;
+    display: block;
+    margin: 0 auto 10px auto;
+    width: 250px;
+  }
+
+  /* Garante espaçamento correto do título */
+  .institucional{
+    margin-top: 10px;
+  }
+
+  /* Oculta elementos desnecessários */
+  .filtros,
+  button{
+    display: none;
+  }
+
+}
+
+  .topo{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:20px;
+  background:white;
+  padding:10px;
+}
+
+.topo img{
+  width:220px;
+}
+
 @media print{
+  .topo{
+    flex-direction:column;
+    text-align:center;
+  }
 
-@page{
-size:landscape;
-}
-
-.filtros{
-display:none;
-}
-
-button{
-display:none;
-}
-
+  .topo img{
+    width:200px;
+  }
 }
 
 </style>
@@ -234,14 +269,7 @@ display:none;
 
 <body>
 
-<img src="https://raw.githubusercontent.com/Painel-Competitividade/imagem/main/logo_HU-EBSERH2.png" 
-style="
-position:absolute;
-top:10px;
-left:15px;
-width:350px;
-z-index:10;
-">
+<img src="https://raw.githubusercontent.com/Painel-Competitividade/imagem/main/logo_HU-EBSERH2.png" style="position:absolute; top:10px; left:15px; width:350px; z-index:10;">
 
 <div id="loadingOverlay">
 <div id="loadingBox">Carregando...</div>
