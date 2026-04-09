@@ -1,166 +1,250 @@
-<!-- (código completo mantido, apenas JS ajustado) -->
+<!DOCTYPE html>
+
+<html lang="pt-br"> 
+<head>
+<meta charset="UTF-8">
+<title>HULW/UFPB/HUBRASIL - Competitividade</title>
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{font-family:Arial;margin:0;background:#f4f6f5;}
+.institucional{text-align:center;background:white;padding:15px 10px 5px 10px;border-bottom:3px solid #8CC63F;}
+.inst1{font-weight:bold;font-size:18px;color:#444;}
+.inst2{font-size:16px;color:#444;font-weight:bold;}
+.inst3{font-size:14px;color:#444;font-weight:bold;margin-bottom:5px;}
+.header{background:#8CC63F;padding:20px;text-align:center;font-size:24px;font-weight:bold;color:#444;}
+.container{padding:20px;}
+.filtros{display:grid;grid-template-columns:repeat(6,1fr);gap:20px;margin-bottom:20px;background:white;padding:15px;border-radius:8px;box-shadow:0 0 8px rgba(0,0,0,0.08);}
+label{font-size:12px;font-weight:bold;}
+input{width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;}
+button{padding:8px 12px;border:none;border-radius:4px;cursor:pointer;font-weight:bold;}
+.btn-aplicar{background:#8CC63F;color:white;}
+.btn-limpar{background:#C00000;color:white;}
+.btn-exportar{background:#444;color:white;}
+.btn-imprimir{background:#4285F4;color:white;}
+.indicadores{display:flex;gap:15px;margin-bottom:20px;}
+.card{flex:1;background:white;border-left:6px solid #8CC63F;padding:15px;border-radius:6px;box-shadow:0 0 6px rgba(0,0,0,0.06);text-align:center;}
+.card h3{margin:0;font-size:14px;}
+.card p{font-size:22px;font-weight:bold;margin-top:5px;}
+table{width:100%;border-collapse:collapse;background:white;font-size:12px;}
+th,td{border:1px solid #ddd;padding:6px;text-align:left;}
+th{background:#8CC63F;color:white;cursor:pointer;}
+#contador{font-weight:bold;margin-top:10px;margin-bottom:10px;}
+.graficos{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:30px;}
+.grafico-card{background:white;padding:15px;border-radius:6px;box-shadow:0 0 6px rgba(0,0,0,0.06);}
+.grafico-card h3{text-align:center;}
+</style>
+
+</head>
+
+<body>
+
+<div class="institucional">
+<div class="inst1">HOSPITAL UNIVERSITÁRIO LAURO WANDERLEY</div>
+<div class="inst2">UNIVERSIDADE FEDERAL DA PARAÍBA</div>
+<div class="inst3">EMPRESA BRASILEIRA DE SERVIÇOS HOSPITALARES</div>
+</div>
+
+<div class="header">PAINEL DE ANÁLISE DE COMPETITIVIDADE</div>
+
+<div class="container">
+
+<button class="btn-aplicar" onclick="applyFilters()">Aplicar Filtros</button>
+
+<div id="contador"></div>
+
+<table id="dataTable">
+<thead></thead>
+<tbody></tbody>
+</table>
+
+<div class="graficos">
+
+<div class="grafico-card">
+<h3>Fornecedores por Porte (ME/EPP)</h3>
+<canvas id="graficoPorte"></canvas>
+</div>
+
+<div class="grafico-card">
+<h3>Tendência de Fornecedores no Período</h3>
+<canvas id="graficoTendencia"></canvas>
+</div>
+
+</div>
+
+</div>
+
 <script>
 
 let originalData=[]
 let filteredData=[]
-let sortDirection=1
-
 let chartPorte=null
 let chartLinha=null
 
-// 🔥 NOVO CONTROLE GLOBAL
-let mesSelecionadoAtual = null
-let porteSelecionadoAtual = null
+// 🔥 CONTROLE GLOBAL
+let mesSelecionadoAtual=null
+let porteSelecionadoAtual=null
 
 const googleSheetCSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vTQH6JfKGvaPplebHWWPH_6GLvWTc_Fr6Jx5VoAhwqgAnfAPGKnlMhtM8AzJcalvA/pub?gid=1616332808&single=true&output=csv"
 
-// 🔥 FUNÇÃO GLOBAL DE FILTROS
+// ================= LOAD =================
+function applyFilters(){
+
+fetch(googleSheetCSV)
+.then(res=>res.text())
+.then(text=>{
+
+Papa.parse(text,{
+header:true,
+skipEmptyLines:true,
+complete:function(results){
+
+originalData=results.data
+
+originalData.forEach(r=>{
+if(r["Data da Homologação"]){
+let p=r["Data da Homologação"].split("/")
+r["DataObj"]=new Date(p[2],p[1]-1,p[0])
+}
+})
+
+renderTable(originalData)
+updateCharts(originalData)
+
+}
+})
+
+})
+
+}
+
+// ================= FILTRO GLOBAL =================
 function aplicarFiltrosGlobais(){
 
-let dados = originalData
+let dados=originalData
 
 if(mesSelecionadoAtual){
-dados = dados.filter(r=>{
-if(!r["DataObj"]) return false
-let d=r["DataObj"]
-let mes = String(d.getMonth()+1).padStart(2,"0")
-let ano = d.getFullYear().toString().slice(2)
-return (mes + "/" + ano) === mesSelecionadoAtual
+dados=dados.filter(r=>{
+let d=r.DataObj
+if(!d) return false
+let m=String(d.getMonth()+1).padStart(2,"0")
+let a=d.getFullYear().toString().slice(2)
+return (m+"/"+a)===mesSelecionadoAtual
 })
 }
 
 if(porteSelecionadoAtual){
-dados = dados.filter(r=>{
-return (r["Porte"]||"").toUpperCase() === porteSelecionadoAtual
-})
+dados=dados.filter(r=>(r.Porte||"").toUpperCase()===porteSelecionadoAtual)
 }
 
 renderTable(dados)
 updateCharts(dados)
 
-document.getElementById("contador").innerText =
-dados.length + " registros (filtros aplicados)"
+document.getElementById("contador").innerText=dados.length+" registros"
 
 }
 
-// ================================
-// UPDATE CHARTS
-// ================================
-function updateCharts(data){
+// ================= TABELA =================
+function renderTable(data){
 
-if(chartPorte){chartPorte.destroy()}
-if(chartLinha){chartLinha.destroy()}
+let thead=document.querySelector("#dataTable thead")
+let tbody=document.querySelector("#dataTable tbody")
+
+thead.innerHTML=""
+tbody.innerHTML=""
 
 if(data.length===0) return
 
-let me=0
-let epp=0
+let headers=Object.keys(data[0]).filter(h=>h!=="DataObj")
 
+let tr="<tr>"
+headers.forEach(h=>tr+="<th>"+h+"</th>")
+tr+="</tr>"
+
+thead.innerHTML=tr
+
+let html=""
 data.forEach(r=>{
-let porte=(r["Porte"]||"").toUpperCase()
-if(porte==="ME") me++
-if(porte==="EPP") epp++
+let row="<tr>"
+headers.forEach(h=>{
+let v=r[h]
+if(h==="Data da Homologação" && r.DataObj){
+v=r.DataObj.toLocaleDateString("pt-BR")
+}
+row+="<td>"+(v||"")+"</td>"
+})
+row+="</tr>"
+html+=row
 })
 
-// 🔥 AGRUPAMENTO MENSAL
-let fornecedoresPorMes = {}
+tbody.innerHTML=html
+
+}
+
+// ================= CHARTS =================
+function updateCharts(data){
+
+if(chartPorte) chartPorte.destroy()
+if(chartLinha) chartLinha.destroy()
+
+let me=0,epp=0
 
 data.forEach(r=>{
-if(!r["DataObj"]) return
-
-let d = r["DataObj"]
-let mes = String(d.getMonth()+1).padStart(2,"0")
-let ano = d.getFullYear().toString().slice(2)
-
-let chave = mes + "/" + ano
-
-let cnpj=(r["CNPJ"]||"").replace(/\D/g,"")
-
-if(!fornecedoresPorMes[chave]){
-fornecedoresPorMes[chave] = { cnpjs:new Set() }
-}
-
-if(cnpj){
-fornecedoresPorMes[chave].cnpjs.add(cnpj)
-}
+let p=(r.Porte||"").toUpperCase()
+if(p==="ME") me++
+if(p==="EPP") epp++
 })
 
-let labels = Object.keys(fornecedoresPorMes).sort((a,b)=>{
+// AGRUPAMENTO MENSAL
+let map={}
+data.forEach(r=>{
+let d=r.DataObj
+if(!d) return
+let m=String(d.getMonth()+1).padStart(2,"0")
+let a=d.getFullYear().toString().slice(2)
+let k=m+"/"+a
+if(!map[k]) map[k]=new Set()
+map[k].add((r.CNPJ||""))
+})
+
+let labels=Object.keys(map).sort((a,b)=>{
 let [ma,ya]=a.split("/")
 let [mb,yb]=b.split("/")
-return new Date("20"+ya,ma-1) - new Date("20"+yb,mb-1)
+return new Date("20"+ya,ma-1)-new Date("20"+yb,mb-1)
 })
 
-let valores = labels.map(l=>fornecedoresPorMes[l].cnpjs.size)
+let valores=labels.map(l=>map[l].size)
 
-// ================================
-// GRÁFICO PORTE
-// ================================
+// PORTE
 chartPorte=new Chart(document.getElementById("graficoPorte"),{
 type:"bar",
-data:{
-labels:["ME","EPP"],
-datasets:[{
-data:[me,epp],
-backgroundColor:["#8CC63F","#444"]
-}]
-},
+data:{labels:["ME","EPP"],datasets:[{data:[me,epp],backgroundColor:["#8CC63F","#444"]}]},
 options:{
 plugins:{legend:{display:false}},
-onClick:function(evt,elements){
-
-if(elements.length>0){
-
-let index=elements[0].index
-let porte=index===0?"ME":"EPP"
-
-// toggle
-if(porteSelecionadoAtual===porte){
-porteSelecionadoAtual=null
-}else{
-porteSelecionadoAtual=porte
-}
-
+onClick:(e,el)=>{
+if(el.length){
+let p=el[0].index===0?"ME":"EPP"
+porteSelecionadoAtual=(porteSelecionadoAtual===p?null:p)
 aplicarFiltrosGlobais()
-
 }
 }
 }
 })
 
-// ================================
-// GRÁFICO TENDÊNCIA
-// ================================
+// TENDÊNCIA
 chartLinha=new Chart(document.getElementById("graficoTendencia"),{
 type:"line",
-data:{
-labels:labels,
-datasets:[{
-label:"Fornecedores",
-data:valores,
-borderColor:"#8CC63F",
-backgroundColor:"#8CC63F",
-tension:0.2
-}]
-},
+data:{labels:labels,datasets:[{label:"Fornecedores",data:valores,borderColor:"#8CC63F",backgroundColor:"#8CC63F",tension:0.2}]},
 options:{
 plugins:{legend:{display:true}},
-onClick:function(evt,elements){
-
-if(elements.length>0){
-
-let index=elements[0].index
-let mes=labels[index]
-
-// toggle
-if(mesSelecionadoAtual===mes){
-mesSelecionadoAtual=null
-}else{
-mesSelecionadoAtual=mes
-}
-
+onClick:(e,el)=>{
+if(el.length){
+let m=labels[el[0].index]
+mesSelecionadoAtual=(mesSelecionadoAtual===m?null:m)
 aplicarFiltrosGlobais()
-
 }
 }
 }
@@ -169,3 +253,6 @@ aplicarFiltrosGlobais()
 }
 
 </script>
+
+</body>
+</html>
