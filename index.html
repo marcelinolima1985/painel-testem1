@@ -360,6 +360,7 @@ let sortDirection=1
 let chartPorte=null
 let chartLinha=null
 let mesSelecionadoAtual = null
+let porteSelecionadoAtual = null
 
 const googleSheetCSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vTQH6JfKGvaPplebHWWPH_6GLvWTc_Fr6Jx5VoAhwqgAnfAPGKnlMhtM8AzJcalvA/pub?gid=1616332808&single=true&output=csv"
 
@@ -558,7 +559,7 @@ const obs=document.getElementById("observacao")
 if(qtdFornecedores>=3){
 
 obs.className="observacao obs-positiva"
-obs.innerText="OBSERVAÇÃO: ✅ Com base nos dados do Portal Nacional de Dados Abertos e do Portal Nacional de Contratações Públicas referentes ao "+catmat+" utilizado na pesquisa, foram encontrados 3 (três) fornecedores ME/EPP participantes de licitações públicas federais, capazes de atender ao art. 47, II, da LC 123/2006, dentro do intervalo de "+periodo+"."
+obs.innerText="OBSERVAÇÃO: ✅ Com base nos dados do Portal Nacional de Dados Abertos e do Portal Nacional de Contratações Públicas referentes ao "+catmat+" utilizado na pesquisa, foram encontrados 3 (três) ou mais fornecedores ME/EPP participantes de licitações públicas federais, capazes de atender ao art. 47, II, da LC 123/2006, dentro do intervalo de "+periodo+"."
 
 }else{
 
@@ -637,7 +638,46 @@ data:[me,epp],
 backgroundColor:["#8CC63F","#444"]
 }]
 },
-options:{plugins:{legend:{display:false}}}
+options:{
+plugins:{legend:{display:false}},
+onClick: function(evt, elements){
+
+if(elements.length > 0){
+
+let index = elements[0].index
+let porteSelecionado = index === 0 ? "ME" : "EPP"
+
+// 🔁 SE CLICAR NOVAMENTE → RESETA TUDO
+if(porteSelecionadoAtual === porteSelecionado){
+
+porteSelecionadoAtual = null
+
+renderTable(data)
+updateCharts(data)
+
+document.getElementById("contador").innerText =
+data.length + " registros (todos os portes)"
+
+return
+}
+
+// ✅ APLICA FILTRO
+porteSelecionadoAtual = porteSelecionado
+
+let dadosFiltrados = data.filter(r=>{
+return (r["Porte"]||"").toUpperCase() === porteSelecionado
+})
+
+// 🔄 ATUALIZA TUDO
+renderTable(dadosFiltrados)
+updateCharts(dadosFiltrados)
+
+document.getElementById("contador").innerText =
+dadosFiltrados.length + " registros - Porte " + porteSelecionado
+
+}
+}
+}
 })
 
 chartLinha=new Chart(document.getElementById("graficoTendencia"),{
