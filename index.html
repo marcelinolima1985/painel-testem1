@@ -584,32 +584,47 @@ if(porte==="ME") me++
 if(porte==="EPP") epp++
 })
 
-let fornecedoresPorData={}
+// ================================
+// AGRUPAMENTO POR MÊS
+// ================================
+let fornecedoresPorMes = {}
 
-data.forEach(r=>{
+data.forEach(r => {
 
 if(!r["DataObj"]) return
 
-let dataKey=formatDateBR(r["DataObj"])
+let d = r["DataObj"]
+let mes = String(d.getMonth()+1).padStart(2,"0")
+let ano = d.getFullYear().toString().slice(2)
+
+let chave = mes + "/" + ano
+
 let cnpj=(r["CNPJ"]||"").replace(/\D/g,"")
 
-if(!fornecedoresPorData[dataKey]){
-fornecedoresPorData[dataKey]=new Set()
+if(!fornecedoresPorMes[chave]){
+fornecedoresPorMes[chave] = {
+cnpjs: new Set(),
+datas: []
+}
 }
 
 if(cnpj){
-fornecedoresPorData[dataKey].add(cnpj)
+fornecedoresPorMes[chave].cnpjs.add(cnpj)
 }
 
+fornecedoresPorMes[chave].datas.push(d)
+
 })
 
-let labels=Object.keys(fornecedoresPorData).sort((a,b)=>{
-let da=a.split("/").reverse().join("-")
-let db=b.split("/").reverse().join("-")
-return new Date(da)-new Date(db)
+// ordenar meses corretamente
+let labels = Object.keys(fornecedoresPorMes).sort((a,b)=>{
+let [ma,ya]=a.split("/")
+let [mb,yb]=b.split("/")
+return new Date("20"+ya,ma-1) - new Date("20"+yb,mb-1)
 })
 
-let valores=labels.map(l=>fornecedoresPorData[l].size)
+// valores = total fornecedores por mês
+let valores = labels.map(l => fornecedoresPorMes[l].cnpjs.size)
 
 chartPorte=new Chart(document.getElementById("graficoPorte"),{
 type:"bar",
@@ -629,7 +644,7 @@ type:"line",
 data:{
 labels:labels,
 datasets:[{
-label:"Fornecedores", // ✅ CORREÇÃO AQUI
+label:"Fornecedores",
 data:valores,
 borderColor:"#8CC63F",
 backgroundColor:"#8CC63F",
@@ -638,8 +653,34 @@ tension:0.2
 },
 options:{
 plugins:{
-legend:{
-display:true
+legend:{display:true}
+},
+onClick: function(evt, elements){
+
+if(elements.length > 0){
+
+let index = elements[0].index
+let mesSelecionado = labels[index]
+
+// filtrar dados do mês
+let dadosMes = data.filter(r=>{
+
+if(!r["DataObj"]) return false
+
+let d=r["DataObj"]
+let mes = String(d.getMonth()+1).padStart(2,"0")
+let ano = d.getFullYear().toString().slice(2)
+
+return (mes + "/" + ano) === mesSelecionado
+
+})
+
+// atualizar tabela com datas detalhadas
+renderTable(dadosMes)
+
+document.getElementById("contador").innerText =
+dadosMes.length + " registros do mês " + mesSelecionado
+
 }
 }
 }
