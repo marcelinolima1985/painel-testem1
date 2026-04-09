@@ -359,6 +359,7 @@ let sortDirection=1
 
 let chartPorte=null
 let chartLinha=null
+let mesSelecionadoAtual = null
 
 const googleSheetCSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vTQH6JfKGvaPplebHWWPH_6GLvWTc_Fr6Jx5VoAhwqgAnfAPGKnlMhtM8AzJcalvA/pub?gid=1616332808&single=true&output=csv"
 
@@ -662,7 +663,22 @@ if(elements.length > 0){
 let index = elements[0].index
 let mesSelecionado = labels[index]
 
-// filtrar dados do mês
+// 🔁 SE CLICAR NO MESMO MÊS → VOLTA PARA TODOS
+if(mesSelecionadoAtual === mesSelecionado){
+
+mesSelecionadoAtual = null
+
+renderTable(data)
+
+document.getElementById("contador").innerText =
+data.length + " registros (todos os meses)"
+
+return
+}
+
+// ✅ APLICA FILTRO
+mesSelecionadoAtual = mesSelecionado
+
 let dadosMes = data.filter(r=>{
 
 if(!r["DataObj"]) return false
